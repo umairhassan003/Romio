@@ -1,61 +1,55 @@
 import 'package:flutter/material.dart';
+import 'package:provider/provider.dart';
 import '../../../../core/theme/app_colors.dart';
 import '../../../../core/theme/app_text_styles.dart';
+import 'package:flutter_gen/gen_l10n/app_localizations.dart';
+import '../providers/locale_provider.dart';
+import '../providers/profile_provider.dart';
 
-class LanguageScreen extends StatefulWidget {
+class LanguageScreen extends StatelessWidget {
   const LanguageScreen({super.key});
 
   @override
-  State<LanguageScreen> createState() => _LanguageScreenState();
-}
-
-class _LanguageScreenState extends State<LanguageScreen> {
-  String _selectedLanguage = 'es';
-
-  @override
   Widget build(BuildContext context) {
+    final l10n = AppLocalizations.of(context);
+    final localeProvider = context.watch<LocaleProvider>();
+    final profileProvider = context.read<ProfileProvider>();
+    final selected = localeProvider.languageCode;
+
     return Scaffold(
       backgroundColor: AppColors.backgroundPink,
       appBar: AppBar(
-        title: const Text('Idioma', style: AppTextStyles.headingS),
-        backgroundColor: Colors.transparent,
-        elevation: 0,
+        title: Text(l10n?.profileLanguageTitle ?? 'Idioma', style: AppTextStyles.headingS),
+        backgroundColor: Colors.transparent, elevation: 0,
         iconTheme: const IconThemeData(color: AppColors.primaryBurgundy),
       ),
       body: Padding(
-        padding: const EdgeInsets.all(24.0),
-        child: Column(
-          children: [
-            _buildLanguageOption('es', 'Español'),
-            const SizedBox(height: 16),
-            _buildLanguageOption('en', 'English'),
-          ],
-        ),
+        padding: const EdgeInsets.all(24),
+        child: Column(children: [
+          _langOption(context, localeProvider, profileProvider, 'es', 'Español', selected == 'es'),
+          const SizedBox(height: 16),
+          _langOption(context, localeProvider, profileProvider, 'en', 'English', selected == 'en'),
+        ]),
       ),
     );
   }
 
-  Widget _buildLanguageOption(String code, String name) {
-    final isSelected = _selectedLanguage == code;
+  Widget _langOption(BuildContext context, LocaleProvider locale, ProfileProvider profile, String code, String name, bool sel) {
     return GestureDetector(
       onTap: () {
-        setState(() => _selectedLanguage = code);
-        // Trigger generic localization change state here
+        locale.setLocale(code);
+        profile.updateLanguage(code);
       },
       child: Container(
         padding: const EdgeInsets.all(16),
         decoration: BoxDecoration(
-          color: AppColors.backgroundWhite,
-          borderRadius: BorderRadius.circular(16),
-          border: Border.all(color: isSelected ? AppColors.primaryBurgundy : AppColors.borderLight),
+          color: AppColors.backgroundWhite, borderRadius: BorderRadius.circular(16),
+          border: Border.all(color: sel ? AppColors.primaryBurgundy : AppColors.borderLight, width: 2),
         ),
-        child: Row(
-          mainAxisAlignment: MainAxisAlignment.spaceBetween,
-          children: [
-            Text(name, style: AppTextStyles.labelM),
-            if (isSelected) const Icon(Icons.check_circle, color: AppColors.primaryBurgundy),
-          ],
-        ),
+        child: Row(mainAxisAlignment: MainAxisAlignment.spaceBetween, children: [
+          Text(name, style: AppTextStyles.labelM),
+          if (sel) const Icon(Icons.check_circle, color: AppColors.primaryBurgundy),
+        ]),
       ),
     );
   }

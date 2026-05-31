@@ -1,9 +1,12 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
+import 'package:flutter_gen/gen_l10n/app_localizations.dart';
+import 'package:flutter_localizations/flutter_localizations.dart';
 
 import 'core/constants/supabase_constants.dart';
 import 'core/router/app_router.dart';
+import 'mobile/theme/app_theme.dart';
 
 // Repositories
 import 'data/repositories/supabase_auth_repository.dart';
@@ -11,10 +14,12 @@ import 'data/repositories/supabase_profile_repository.dart';
 import 'data/repositories/supabase_hotel_repository.dart';
 import 'data/repositories/supabase_room_repository.dart';
 import 'data/repositories/supabase_reservation_repository.dart';
+import 'data/repositories/supabase_payment_repository.dart';
 
 // Feature Providers
 import 'mobile/features/auth/providers/auth_provider.dart';
 import 'mobile/features/profile/providers/profile_provider.dart';
+import 'mobile/features/profile/providers/locale_provider.dart';
 import 'mobile/features/home/providers/home_provider.dart';
 import 'mobile/features/my_reservations/providers/my_reservations_provider.dart';
 import 'mobile/features/reservation/providers/reservation_flow_provider.dart';
@@ -61,6 +66,10 @@ class MyApp extends StatelessWidget {
         Provider(create: (_) => SupabaseHotelRepository()),
         Provider(create: (_) => SupabaseRoomRepository()),
         Provider(create: (_) => SupabaseReservationRepository()),
+        Provider(create: (_) => SupabasePaymentRepository()),
+
+        // Locale Provider (language switching)
+        ChangeNotifierProvider(create: (_) => LocaleProvider()),
 
         // Inject Feature Providers (State Management)
         ChangeNotifierProvider(
@@ -89,16 +98,27 @@ class MyApp extends StatelessWidget {
         ChangeNotifierProvider(
           create: (context) => ReservationFlowProvider(
             reservationRepository: context.read<SupabaseReservationRepository>(),
+            paymentRepository: context.read<SupabasePaymentRepository>(),
           ),
         ),
       ],
-      child: MaterialApp.router(
-        title: 'Romio',
-        theme: ThemeData(
-          colorScheme: ColorScheme.fromSeed(seedColor: Colors.blue),
-          useMaterial3: true,
-        ),
-        routerConfig: appRouter,
+      child: Consumer<LocaleProvider>(
+        builder: (context, localeProvider, _) {
+          return MaterialApp.router(
+            title: 'Romio',
+            debugShowCheckedModeBanner: false,
+            theme: AppTheme.lightTheme,
+            locale: localeProvider.locale,
+            supportedLocales: AppLocalizations.supportedLocales,
+            localizationsDelegates: const [
+              AppLocalizations.delegate,
+              GlobalMaterialLocalizations.delegate,
+              GlobalWidgetsLocalizations.delegate,
+              GlobalCupertinoLocalizations.delegate,
+            ],
+            routerConfig: appRouter,
+          );
+        },
       ),
     );
   }

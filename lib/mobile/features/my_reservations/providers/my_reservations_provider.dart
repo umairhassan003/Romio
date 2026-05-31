@@ -7,6 +7,10 @@ class MyReservationsProvider extends ChangeNotifier {
 
   List<Reservation> _reservations = [];
   bool _isLoading = false;
+  String? _error;
+
+  // Track reminder state per reservation ID
+  final Map<String, bool> _reminders = {};
 
   MyReservationsProvider({
     required ReservationRepository reservationRepository,
@@ -14,14 +18,28 @@ class MyReservationsProvider extends ChangeNotifier {
 
   List<Reservation> get reservations => _reservations;
   bool get isLoading => _isLoading;
+  String? get error => _error;
+
+  /// Only upcoming/active reservations.
+  List<Reservation> get upcomingReservations =>
+      _reservations.where((r) => r.status != 'cancelled' && r.status != 'completed').toList();
+
+  bool isReminderEnabled(String reservationId) => _reminders[reservationId] ?? true;
+
+  void toggleReminder(String reservationId, bool enabled) {
+    _reminders[reservationId] = enabled;
+    notifyListeners();
+  }
 
   Future<void> loadUserReservations(String profileId) async {
     _isLoading = true;
+    _error = null;
     notifyListeners();
 
     try {
       _reservations = await _reservationRepository.getUserReservations(profileId);
     } catch (e) {
+      _error = e.toString();
       debugPrint('Error loading reservations: $e');
     } finally {
       _isLoading = false;

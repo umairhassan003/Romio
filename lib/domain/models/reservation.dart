@@ -13,6 +13,11 @@ class Reservation {
   final DateTime createdAt;
   final DateTime updatedAt;
 
+  // Joined/enriched fields (from rooms(*, hotels(*)) query)
+  final String? roomName;
+  final String? hotelName;
+  final String? hotelAddress;
+
   const Reservation({
     required this.id,
     required this.profileId,
@@ -27,9 +32,27 @@ class Reservation {
     this.cancelledAt,
     required this.createdAt,
     required this.updatedAt,
+    this.roomName,
+    this.hotelName,
+    this.hotelAddress,
   });
 
   factory Reservation.fromJson(Map<String, dynamic> json) {
+    // Extract joined room/hotel data if present
+    String? roomName;
+    String? hotelName;
+    String? hotelAddress;
+
+    final roomData = json['rooms'];
+    if (roomData is Map<String, dynamic>) {
+      roomName = roomData['name'] as String?;
+      final hotelData = roomData['hotels'];
+      if (hotelData is Map<String, dynamic>) {
+        hotelName = hotelData['name'] as String?;
+        hotelAddress = hotelData['address'] as String?;
+      }
+    }
+
     return Reservation(
       id: json['id'] as String,
       profileId: json['profile_id'] as String,
@@ -44,6 +67,9 @@ class Reservation {
       cancelledAt: json['cancelled_at'] != null ? DateTime.parse(json['cancelled_at']) : null,
       createdAt: DateTime.parse(json['created_at']),
       updatedAt: DateTime.parse(json['updated_at']),
+      roomName: roomName,
+      hotelName: hotelName,
+      hotelAddress: hotelAddress,
     );
   }
 
@@ -79,6 +105,9 @@ class Reservation {
     DateTime? cancelledAt,
     DateTime? createdAt,
     DateTime? updatedAt,
+    String? roomName,
+    String? hotelName,
+    String? hotelAddress,
   }) {
     return Reservation(
       id: id ?? this.id,
@@ -94,6 +123,9 @@ class Reservation {
       cancelledAt: cancelledAt ?? this.cancelledAt,
       createdAt: createdAt ?? this.createdAt,
       updatedAt: updatedAt ?? this.updatedAt,
+      roomName: roomName ?? this.roomName,
+      hotelName: hotelName ?? this.hotelName,
+      hotelAddress: hotelAddress ?? this.hotelAddress,
     );
   }
 }
