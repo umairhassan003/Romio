@@ -29,7 +29,9 @@ class _RoomFormScreenState extends State<RoomFormScreen> {
   final _formKey = GlobalKey<FormState>();
   final _nameCtrl = TextEditingController();
   final _descCtrl = TextEditingController();
-  final _priceCtrl = TextEditingController();
+  final _price3hCtrl = TextEditingController();
+  final _price6hCtrl = TextEditingController();
+  final _price24hCtrl = TextEditingController();
 
   String? _coverUrl;
   String _status = 'available';
@@ -58,7 +60,9 @@ class _RoomFormScreenState extends State<RoomFormScreen> {
           _existingRoom = room;
           _nameCtrl.text = room.name;
           _descCtrl.text = room.description ?? '';
-          _priceCtrl.text = room.pricePerHour.toString();
+          _price3hCtrl.text = room.price3h.toStringAsFixed(2);
+          _price6hCtrl.text = room.price6h.toStringAsFixed(2);
+          _price24hCtrl.text = room.price24h.toStringAsFixed(2);
           _coverUrl = room.coverImageUrl;
           _status = room.status;
           _selectedHotelId = room.hotelId;
@@ -74,7 +78,9 @@ class _RoomFormScreenState extends State<RoomFormScreen> {
   void dispose() {
     _nameCtrl.dispose();
     _descCtrl.dispose();
-    _priceCtrl.dispose();
+    _price3hCtrl.dispose();
+    _price6hCtrl.dispose();
+    _price24hCtrl.dispose();
     super.dispose();
   }
 
@@ -155,12 +161,19 @@ class _RoomFormScreenState extends State<RoomFormScreen> {
       return;
     }
     final provider = context.read<RoomAdminProvider>();
+    final price3h = double.tryParse(_price3hCtrl.text) ?? 0;
+    final price6h = double.tryParse(_price6hCtrl.text) ?? 0;
+    final price24h = double.tryParse(_price24hCtrl.text) ?? 0;
     final room = Room(
       id: _existingRoom?.id ?? '',
       hotelId: _selectedHotelId!,
       name: _nameCtrl.text.trim(),
       description: _descCtrl.text.trim().isEmpty ? null : _descCtrl.text.trim(),
-      pricePerHour: double.tryParse(_priceCtrl.text) ?? 0,
+      // Keep the hourly rate consistent with the 3h slot for legacy/min-price use.
+      pricePerHour: price3h > 0 ? price3h / 3 : (_existingRoom?.pricePerHour ?? 0),
+      price3h: price3h,
+      price6h: price6h,
+      price24h: price24h,
       rating: _existingRoom?.rating ?? 0.0,
       coverImageUrl: _coverUrl,
       status: _status,
@@ -188,6 +201,25 @@ class _RoomFormScreenState extends State<RoomFormScreen> {
 
       if (mounted) context.go('/admin/rooms/${result.id}');
     }
+  }
+
+  Widget _priceField(String label, TextEditingController ctrl, AppLocalizations l) {
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        FormFieldLabel(label: label, isRequired: true),
+        TextFormField(
+          controller: ctrl,
+          keyboardType: const TextInputType.numberWithOptions(decimal: true),
+          decoration: const InputDecoration(prefixText: '\$ '),
+          validator: (v) {
+            final parsed = double.tryParse(v ?? '');
+            if (parsed == null || parsed <= 0) return l.roomFormRequired;
+            return null;
+          },
+        ),
+      ],
+    );
   }
 
   @override
@@ -269,55 +301,40 @@ class _RoomFormScreenState extends State<RoomFormScreen> {
                         FormFieldLabel(label: l.roomFormDescription),
                         TextFormField(controller: _descCtrl, maxLines: 3),
                         const SizedBox(height: 16),
+                        FormFieldLabel(label: l.roomFormStatus),
+                        DropdownButtonFormField<String>(
+                          value: _status,
+                          items: [
+                            DropdownMenuItem(
+                              value: 'available',
+                              child: Text(l.roomFormAvailable),
+                            ),
+                            DropdownMenuItem(
+                              value: 'maintenance',
+                              child: Text(l.roomFormMaintenance),
+                            ),
+                          ],
+                          onChanged:
+                              (v) => setState(() => _status = v ?? 'available'),
+                        ),
+                        const SizedBox(height: 24),
+
+                        // ─── Slot pricing (3h / 6h / 24h) ──────────────
+                        SectionHeader(title: 'Slot Pricing'),
+                        const SizedBox(height: 4),
+                        const Text(
+                          'Set the price for each booking slot. These are the prices guests pay in the mobile app.',
+                          style: TextStyle(fontSize: 13, color: AppColors.textSecondary),
+                        ),
+                        const SizedBox(height: 12),
                         Row(
+                          crossAxisAlignment: CrossAxisAlignment.start,
                           children: [
-                            Expanded(
-                              child: Column(
-                                crossAxisAlignment: CrossAxisAlignment.start,
-                                children: [
-                                  FormFieldLabel(
-                                    label: l.roomFormPricePerHour,
-                                    isRequired: true,
-                                  ),
-                                  TextFormField(
-                                    controller: _priceCtrl,
-                                    keyboardType: TextInputType.number,
-                                    validator:
-                                        (v) =>
-                                            (v == null ||
-                                                    double.tryParse(v) == null)
-                                                ? l.roomFormRequired
-                                                : null,
-                                  ),
-                                ],
-                              ),
-                            ),
+                            Expanded(child: _priceField('Price — 3 hours', _price3hCtrl, l)),
                             const SizedBox(width: 16),
-                            Expanded(
-                              child: Column(
-                                crossAxisAlignment: CrossAxisAlignment.start,
-                                children: [
-                                  FormFieldLabel(label: l.roomFormStatus),
-                                  DropdownButtonFormField<String>(
-                                    value: _status,
-                                    items: [
-                                      DropdownMenuItem(
-                                        value: 'available',
-                                        child: Text(l.roomFormAvailable),
-                                      ),
-                                      DropdownMenuItem(
-                                        value: 'maintenance',
-                                        child: Text(l.roomFormMaintenance),
-                                      ),
-                                    ],
-                                    onChanged:
-                                        (v) => setState(
-                                          () => _status = v ?? 'available',
-                                        ),
-                                  ),
-                                ],
-                              ),
-                            ),
+                            Expanded(child: _priceField('Price — 6 hours', _price6hCtrl, l)),
+                            const SizedBox(width: 16),
+                            Expanded(child: _priceField('Price — 24 hours', _price24hCtrl, l)),
                           ],
                         ),
                         const SizedBox(height: 24),

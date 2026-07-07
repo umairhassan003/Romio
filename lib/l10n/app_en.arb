@@ -351,6 +351,8 @@
     "hotelNoRooms": "No rooms available.",
     "roomPriceLabel": "Price",
     "roomReserveNow": "Reserve Now",
+    "seeMore": "See more",
+    "seeLess": "See less",
     "reservationTitle": "Reservation",
     "reservationSelectDate": "Select date",
     "reservationRoom": "Room",

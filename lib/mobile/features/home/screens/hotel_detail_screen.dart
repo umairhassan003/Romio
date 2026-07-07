@@ -6,6 +6,10 @@ import '../../../../core/theme/app_text_styles.dart';
 import 'package:go_router/go_router.dart';
 import 'package:flutter_gen/gen_l10n/app_localizations.dart';
 import '../providers/home_provider.dart';
+import '../../../widgets/image_carousel.dart';
+import '../../../widgets/expandable_text.dart';
+import '../../../widgets/amenities_grid.dart';
+import '../../../../domain/models/hotel.dart';
 import '../../../../domain/models/room.dart';
 import '../../../../domain/models/amenity.dart';
 
@@ -59,13 +63,8 @@ class _HotelDetailScreenState extends State<HotelDetailScreen> {
             pinned: true,
             backgroundColor: AppColors.backgroundWhite,
             leading: _circleBtn(Icons.arrow_back, () => Navigator.pop(context)),
-            actions: [_circleBtn(Icons.bookmark_border, () {})],
             flexibleSpace: FlexibleSpaceBar(
-              background: hotel.coverImageUrl != null
-                  ? CachedNetworkImage(imageUrl: hotel.coverImageUrl!, fit: BoxFit.cover,
-                      placeholder: (_, __) => Container(color: AppColors.borderLight),
-                      errorWidget: (_, __, ___) => Container(color: AppColors.borderLight))
-                  : Container(color: AppColors.borderLight, child: const Icon(Icons.hotel, size: 64, color: AppColors.primaryBurgundyLight)),
+              background: ImageCarousel(imageUrls: _imageUrls(hotel), placeholderIcon: Icons.hotel),
             ),
           ),
           SliverToBoxAdapter(
@@ -78,19 +77,23 @@ class _HotelDetailScreenState extends State<HotelDetailScreen> {
                   const Icon(Icons.location_on, size: 16, color: AppColors.textSecondary),
                   const SizedBox(width: 4),
                   Expanded(child: Text(hotel.address, style: AppTextStyles.bodyM.copyWith(color: AppColors.textSecondary))),
-                  const SizedBox(width: 12),
-                  const Icon(Icons.star, color: AppColors.starRating, size: 20),
-                  const SizedBox(width: 4),
-                  Text(hotel.rating.toStringAsFixed(1), style: AppTextStyles.headingS.copyWith(color: AppColors.starRating)),
                 ]),
                 const SizedBox(height: 24),
                 Text(l10n?.hotelAboutTitle ?? 'Acerca del hotel', style: AppTextStyles.headingM),
                 const SizedBox(height: 8),
-                Text(hotel.description ?? 'Sin descripción.', style: AppTextStyles.bodyM.copyWith(height: 1.5), textAlign: TextAlign.justify),
+                ExpandableText(
+                  hotel.description ?? 'Sin descripción.',
+                  moreLabel: l10n?.seeMore ?? 'Ver más',
+                  lessLabel: l10n?.seeLess ?? 'Ver menos',
+                ),
                 const SizedBox(height: 24),
                 Text(l10n?.hotelDetailAmenitiesTitle ?? 'Lo que ofrecemos', style: AppTextStyles.headingM),
                 const SizedBox(height: 16),
-                _amenityRow(hotel.amenities),
+                AmenitiesGrid(
+                  items: _amenityItems(hotel.amenities),
+                  moreLabel: l10n?.seeMore ?? 'Ver más',
+                  lessLabel: l10n?.seeLess ?? 'Ver menos',
+                ),
                 const SizedBox(height: 32),
                 Text(l10n?.hotelSelectRoom ?? 'Seleccionar habitación', style: AppTextStyles.headingM),
                 const SizedBox(height: 16),
@@ -115,6 +118,20 @@ class _HotelDetailScreenState extends State<HotelDetailScreen> {
     );
   }
 
+  /// Ordered, de-duplicated list of image URLs: cover first, then gallery.
+  List<String> _imageUrls(Hotel hotel) {
+    final urls = <String>[];
+    if (hotel.coverImageUrl != null && hotel.coverImageUrl!.isNotEmpty) {
+      urls.add(hotel.coverImageUrl!);
+    }
+    for (final img in hotel.images ?? []) {
+      if (img.storageUrl.isNotEmpty && !urls.contains(img.storageUrl)) {
+        urls.add(img.storageUrl);
+      }
+    }
+    return urls;
+  }
+
   Widget _circleBtn(IconData icon, VoidCallback onTap) => Padding(
     padding: const EdgeInsets.all(8),
     child: CircleAvatar(
@@ -123,19 +140,19 @@ class _HotelDetailScreenState extends State<HotelDetailScreen> {
     ),
   );
 
-  Widget _amenityRow(List<Amenity>? amenities) {
-    final items = amenities != null && amenities.isNotEmpty
-        ? amenities.map((a) => _amenityChip(_amenityIcon(a.iconKey ?? a.name), a.name)).toList()
-        : [_amenityChip(Icons.wifi, 'Wifi'), _amenityChip(Icons.local_parking, 'Parking\nPrivado'), _amenityChip(Icons.vpn_key, 'Acceso\nPrivado'), _amenityChip(Icons.hot_tub, 'Jacuzzi')];
-    return Wrap(spacing: 16, runSpacing: 16, children: items);
+  List<AmenityItem> _amenityItems(List<Amenity>? amenities) {
+    if (amenities != null && amenities.isNotEmpty) {
+      return amenities
+          .map<AmenityItem>((a) => (icon: _amenityIcon(a.iconKey ?? a.name), label: a.name))
+          .toList();
+    }
+    return const [
+      (icon: Icons.wifi, label: 'Wifi'),
+      (icon: Icons.local_parking, label: 'Parking Privado'),
+      (icon: Icons.vpn_key, label: 'Acceso Privado'),
+      (icon: Icons.hot_tub, label: 'Jacuzzi'),
+    ];
   }
-
-  Widget _amenityChip(IconData icon, String label) => Column(children: [
-    Container(width: 60, height: 60, decoration: BoxDecoration(color: AppColors.surfaceLight, borderRadius: BorderRadius.circular(16)),
-      child: Icon(icon, color: AppColors.primaryBurgundyLight, size: 28)),
-    const SizedBox(height: 6),
-    Text(label, style: AppTextStyles.caption.copyWith(color: AppColors.textSecondary), textAlign: TextAlign.center),
-  ]);
 
   Widget _roomCard(BuildContext context, Room room) {
     final amenityText = room.amenities?.isNotEmpty == true ? room.amenities!.take(3).map((a) => '• ${a.name}').join('  ') : '• Wifi  • AC';
@@ -153,13 +170,10 @@ class _HotelDetailScreenState extends State<HotelDetailScreen> {
           Expanded(child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
             Row(mainAxisAlignment: MainAxisAlignment.spaceBetween, children: [
               Expanded(child: Text(room.name, style: AppTextStyles.labelM, maxLines: 1, overflow: TextOverflow.ellipsis)),
-              Text('\$${room.pricePerHour.toStringAsFixed(0)}/3 Horas', style: AppTextStyles.labelM.copyWith(color: AppColors.primaryBurgundy)),
+              Text('\$${room.price3h.toStringAsFixed(0)}/3h', style: AppTextStyles.labelM.copyWith(color: AppColors.primaryBurgundy)),
             ]),
             const SizedBox(height: 4),
             Text(amenityText, style: AppTextStyles.caption.copyWith(color: AppColors.textSecondary), maxLines: 1, overflow: TextOverflow.ellipsis),
-            const SizedBox(height: 4),
-            Row(children: [const Icon(Icons.star, size: 14, color: AppColors.starRating), const SizedBox(width: 2),
-              Text(room.rating.toStringAsFixed(1), style: AppTextStyles.caption.copyWith(fontWeight: FontWeight.w600))]),
           ])),
         ]),
       ),

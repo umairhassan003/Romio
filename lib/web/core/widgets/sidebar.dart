@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 import 'package:provider/provider.dart';
+import 'package:flutter_svg/flutter_svg.dart';
 import 'package:flutter_gen/gen_l10n/app_localizations.dart';
 import '../../../../core/theme/app_colors.dart';
 import '../../features/auth/providers/admin_auth_provider.dart';
@@ -34,7 +35,11 @@ class Sidebar extends StatelessWidget {
             alignment: isCollapsed ? Alignment.center : Alignment.centerLeft,
             child: isCollapsed
                 ? const Text('R', style: TextStyle(color: Colors.white, fontSize: 24, fontWeight: FontWeight.bold))
-                : const Text('ROMIO', style: TextStyle(color: Colors.white, fontSize: 22, fontWeight: FontWeight.bold, letterSpacing: 3)),
+                : SvgPicture.asset(
+                    'images/RomioLogo.svg',
+                    height: 26,
+                    colorFilter: const ColorFilter.mode(Colors.white, BlendMode.srcIn),
+                  ),
           ),
           const Divider(color: Color(0xFF4A3245), height: 1),
 

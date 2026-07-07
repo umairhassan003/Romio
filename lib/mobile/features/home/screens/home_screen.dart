@@ -46,13 +46,21 @@ class _HomeScreenState extends State<HomeScreen> {
                 ),
               )
               : SafeArea(
+                // Let content scroll *behind* the floating (translucent) nav
+                // bar; the content padding below keeps the last hotel clear.
+                bottom: false,
                 child: RefreshIndicator(
                   color: AppColors.primaryBurgundy,
                   onRefresh: () => homeProvider.loadHotels(),
                   child: SingleChildScrollView(
                     physics: const AlwaysScrollableScrollPhysics(),
                     child: Padding(
-                      padding: const EdgeInsets.only(top: 24.0, bottom: 16.0),
+                      padding: EdgeInsets.only(
+                        top: 24.0,
+                        // Clear the floating nav bar (its height + gesture inset)
+                        // so the last hotel isn't covered at the end of the list.
+                        bottom: 76 + MediaQuery.of(context).viewPadding.bottom,
+                      ),
                       child: Column(
                         crossAxisAlignment: CrossAxisAlignment.start,
                         children: [
@@ -234,55 +242,6 @@ class _RecommendedCard extends StatelessWidget {
                   ),
                 ),
               ),
-              // Star rating badge
-              Positioned(
-                top: 12,
-                left: 12,
-                child: Container(
-                  padding: const EdgeInsets.symmetric(
-                    horizontal: 8,
-                    vertical: 4,
-                  ),
-                  decoration: BoxDecoration(
-                    color: Colors.white.withOpacity(0.9),
-                    borderRadius: BorderRadius.circular(8),
-                  ),
-                  child: Row(
-                    mainAxisSize: MainAxisSize.min,
-                    children: [
-                      const Icon(
-                        Icons.star,
-                        size: 14,
-                        color: AppColors.starRating,
-                      ),
-                      const SizedBox(width: 2),
-                      Text(
-                        hotel.rating.toStringAsFixed(1),
-                        style: AppTextStyles.caption.copyWith(
-                          fontWeight: FontWeight.w600,
-                        ),
-                      ),
-                    ],
-                  ),
-                ),
-              ),
-              // Bookmark icon
-              Positioned(
-                top: 12,
-                right: 12,
-                child: Container(
-                  padding: const EdgeInsets.all(6),
-                  decoration: BoxDecoration(
-                    color: Colors.white.withOpacity(0.9),
-                    shape: BoxShape.circle,
-                  ),
-                  child: const Icon(
-                    Icons.favorite_border,
-                    size: 18,
-                    color: AppColors.primaryBurgundy,
-                  ),
-                ),
-              ),
               // Bottom text
               Positioned(
                 bottom: 12,
@@ -409,34 +368,11 @@ class _HotelListCard extends StatelessWidget {
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  Row(
-                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                    children: [
-                      Expanded(
-                        child: Text(
-                          hotel.name,
-                          style: AppTextStyles.labelM,
-                          maxLines: 1,
-                          overflow: TextOverflow.ellipsis,
-                        ),
-                      ),
-                      Row(
-                        children: [
-                          const Icon(
-                            Icons.star,
-                            size: 14,
-                            color: AppColors.starRating,
-                          ),
-                          const SizedBox(width: 2),
-                          Text(
-                            hotel.rating.toStringAsFixed(1),
-                            style: AppTextStyles.caption.copyWith(
-                              fontWeight: FontWeight.w600,
-                            ),
-                          ),
-                        ],
-                      ),
-                    ],
+                  Text(
+                    hotel.name,
+                    style: AppTextStyles.labelM,
+                    maxLines: 1,
+                    overflow: TextOverflow.ellipsis,
                   ),
                   const SizedBox(height: 4),
                   Text(

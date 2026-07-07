@@ -188,6 +188,27 @@ class _RoomDetailScreenState extends State<RoomDetailScreen> {
           ),
           const SizedBox(height: 16),
 
+          // Slot pricing
+          Card(
+            child: Padding(
+              padding: const EdgeInsets.all(24),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  SectionHeader(title: 'Slot Pricing'),
+                  Row(
+                    children: [
+                      Expanded(child: _SlotPrice(label: '3 hours', value: room.price3h)),
+                      Expanded(child: _SlotPrice(label: '6 hours', value: room.price6h)),
+                      Expanded(child: _SlotPrice(label: '24 hours', value: room.price24h)),
+                    ],
+                  ),
+                ],
+              ),
+            ),
+          ),
+          const SizedBox(height: 16),
+
           // Cover Image
           if (room.coverImageUrl != null && room.coverImageUrl!.isNotEmpty)
             Card(
@@ -409,6 +430,31 @@ class _GalleryTileState extends State<_GalleryTile> {
           ),
         ),
       ),
+    );
+  }
+}
+
+class _SlotPrice extends StatelessWidget {
+  final String label;
+  final double value;
+  const _SlotPrice({required this.label, required this.value});
+
+  @override
+  Widget build(BuildContext context) {
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Text(label, style: const TextStyle(color: AppColors.textSecondary, fontSize: 13)),
+        const SizedBox(height: 4),
+        Text(
+          '\$${value.toStringAsFixed(2)}',
+          style: const TextStyle(
+            fontSize: 20,
+            fontWeight: FontWeight.w700,
+            color: AppColors.primaryBurgundy,
+          ),
+        ),
+      ],
     );
   }
 }

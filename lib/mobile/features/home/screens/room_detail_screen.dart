@@ -1,13 +1,15 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
-import 'package:cached_network_image/cached_network_image.dart';
 import '../../../../core/theme/app_colors.dart';
 import '../../../../core/theme/app_text_styles.dart';
 import 'package:go_router/go_router.dart';
 import 'package:flutter_gen/gen_l10n/app_localizations.dart';
 import '../providers/home_provider.dart';
 import '../../reservation/providers/reservation_flow_provider.dart';
+import '../../../widgets/image_carousel.dart';
+import '../../../widgets/amenities_grid.dart';
 import '../../../../domain/models/room.dart';
+import '../../../../domain/models/amenity.dart';
 
 class RoomDetailScreen extends StatefulWidget {
   final String hotelId;
@@ -47,6 +49,20 @@ class _RoomDetailScreenState extends State<RoomDetailScreen> {
     }
   }
 
+  /// Ordered, de-duplicated list of image URLs: cover first, then gallery.
+  List<String> _imageUrls(Room room) {
+    final urls = <String>[];
+    if (room.coverImageUrl != null && room.coverImageUrl!.isNotEmpty) {
+      urls.add(room.coverImageUrl!);
+    }
+    for (final img in room.images ?? []) {
+      if (img.storageUrl.isNotEmpty && !urls.contains(img.storageUrl)) {
+        urls.add(img.storageUrl);
+      }
+    }
+    return urls;
+  }
+
   @override
   Widget build(BuildContext context) {
     final l10n = AppLocalizations.of(context);
@@ -68,7 +84,6 @@ class _RoomDetailScreenState extends State<RoomDetailScreen> {
 
     final room = _room!;
     final amenities = room.amenities;
-    final price = room.pricePerHour;
 
     return Scaffold(
       backgroundColor: AppColors.backgroundWhite,
@@ -79,13 +94,8 @@ class _RoomDetailScreenState extends State<RoomDetailScreen> {
             pinned: true,
             backgroundColor: AppColors.backgroundWhite,
             leading: _circleBtn(Icons.arrow_back, () => Navigator.pop(context)),
-            actions: [_circleBtn(Icons.bookmark_border, () {})],
             flexibleSpace: FlexibleSpaceBar(
-              background: room.coverImageUrl != null
-                  ? CachedNetworkImage(imageUrl: room.coverImageUrl!, fit: BoxFit.cover,
-                      placeholder: (_, __) => Container(color: AppColors.borderLight),
-                      errorWidget: (_, __, ___) => Container(color: AppColors.borderLight))
-                  : Container(color: AppColors.borderLight, child: const Icon(Icons.bed, size: 64, color: AppColors.primaryBurgundyLight)),
+              background: ImageCarousel(imageUrls: _imageUrls(room), placeholderIcon: Icons.bed),
             ),
           ),
           SliverToBoxAdapter(
@@ -94,12 +104,7 @@ class _RoomDetailScreenState extends State<RoomDetailScreen> {
               child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
                 Text(room.name, style: AppTextStyles.headingL),
                 const SizedBox(height: 8),
-                Row(children: [
-                  Expanded(child: Text(hotel?.name ?? '', style: AppTextStyles.bodyM.copyWith(color: AppColors.textSecondary))),
-                  const Icon(Icons.star, color: AppColors.starRating, size: 20),
-                  const SizedBox(width: 4),
-                  Text(room.rating.toStringAsFixed(1), style: AppTextStyles.headingS.copyWith(color: AppColors.starRating)),
-                ]),
+                Text(hotel?.name ?? '', style: AppTextStyles.bodyM.copyWith(color: AppColors.textSecondary)),
                 const SizedBox(height: 24),
                 Text(l10n?.hotelAboutTitle ?? 'Acerca del hotel', style: AppTextStyles.headingM),
                 const SizedBox(height: 8),
@@ -108,11 +113,10 @@ class _RoomDetailScreenState extends State<RoomDetailScreen> {
                 const SizedBox(height: 24),
                 Text(l10n?.hotelDetailAmenitiesTitle ?? 'Lo que ofrecemos', style: AppTextStyles.headingM),
                 const SizedBox(height: 16),
-                Wrap(
-                  spacing: 16, runSpacing: 16,
-                  children: amenities != null && amenities.isNotEmpty
-                      ? amenities.map((a) => _chip(_amenityIcon(a.iconKey ?? a.name), a.name)).toList()
-                      : [_chip(Icons.wifi, 'Wifi'), _chip(Icons.king_bed, 'King\nBed'), _chip(Icons.ac_unit, 'AC'), _chip(Icons.water_drop, 'Water\nHeater')],
+                AmenitiesGrid(
+                  items: _amenityItems(amenities),
+                  moreLabel: l10n?.seeMore ?? 'Ver más',
+                  lessLabel: l10n?.seeLess ?? 'Ver menos',
                 ),
               ]),
             ),
@@ -129,13 +133,16 @@ class _RoomDetailScreenState extends State<RoomDetailScreen> {
           child: Row(mainAxisAlignment: MainAxisAlignment.spaceBetween, children: [
             Column(mainAxisSize: MainAxisSize.min, crossAxisAlignment: CrossAxisAlignment.start, children: [
               Text(l10n?.roomPriceLabel ?? 'Precio', style: AppTextStyles.bodyS.copyWith(color: AppColors.textSecondary)),
-              Text('\$${price.toStringAsFixed(0)}/3 Horas', style: AppTextStyles.price),
+              Text('\$${room.price3h.toStringAsFixed(0)}/3h', style: AppTextStyles.price),
             ]),
             ElevatedButton(
               onPressed: () {
                 context.read<ReservationFlowProvider>().setRoom(
                   roomId: room.id, roomName: room.name,
-                  hotelName: hotel?.name ?? '', pricePerHour: price,
+                  hotelName: hotel?.name ?? '',
+                  price3h: room.price3h,
+                  price6h: room.price6h,
+                  price24h: room.price24h,
                   payOnProperty: hotel?.payOnProperty ?? false,
                 );
                 context.push('/reservation/${room.id}');
@@ -155,14 +162,21 @@ class _RoomDetailScreenState extends State<RoomDetailScreen> {
 
   Widget _circleBtn(IconData icon, VoidCallback onTap) => Padding(
     padding: const EdgeInsets.all(8),
-    child: CircleAvatar(backgroundColor: Colors.white.withOpacity(0.9),
+    child: CircleAvatar(backgroundColor: Colors.white.withValues(alpha: 0.9),
       child: IconButton(icon: Icon(icon, color: AppColors.primaryBurgundy, size: 20), onPressed: onTap)),
   );
 
-  Widget _chip(IconData icon, String label) => Column(children: [
-    Container(width: 60, height: 60, decoration: BoxDecoration(color: AppColors.surfaceLight, borderRadius: BorderRadius.circular(16)),
-      child: Icon(icon, color: AppColors.primaryBurgundyLight, size: 28)),
-    const SizedBox(height: 6),
-    Text(label, style: AppTextStyles.caption.copyWith(color: AppColors.textSecondary), textAlign: TextAlign.center),
-  ]);
+  List<AmenityItem> _amenityItems(List<Amenity>? amenities) {
+    if (amenities != null && amenities.isNotEmpty) {
+      return amenities
+          .map<AmenityItem>((a) => (icon: _amenityIcon(a.iconKey ?? a.name), label: a.name))
+          .toList();
+    }
+    return const [
+      (icon: Icons.wifi, label: 'Wifi'),
+      (icon: Icons.king_bed, label: 'King Bed'),
+      (icon: Icons.ac_unit, label: 'AC'),
+      (icon: Icons.water_drop, label: 'Water Heater'),
+    ];
+  }
 }

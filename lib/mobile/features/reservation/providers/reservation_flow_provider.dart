@@ -12,11 +12,16 @@ class ReservationFlowProvider extends ChangeNotifier {
   final PaymentRepository _paymentRepository;
   final PaymentGateway _paymentGateway;
 
+  /// Bookable duration slots, in hours.
+  static const List<int> slots = [3, 6, 24];
+
   // Flow state
   String? _selectedRoomId;
   String? _roomName;
   String? _hotelName;
-  double _roomPricePerHour = 50.0;
+  double _price3h = 0;
+  double _price6h = 0;
+  double _price24h = 0;
   bool _payOnProperty = false;
   DateTime _selectedDate = DateTime.now();
   String _selectedTime = '14:00';
@@ -41,7 +46,6 @@ class ReservationFlowProvider extends ChangeNotifier {
   String? get selectedRoomId => _selectedRoomId;
   String? get roomName => _roomName;
   String? get hotelName => _hotelName;
-  double get roomPricePerHour => _roomPricePerHour;
 
   /// Whether the selected room's hotel allows reserving without upfront payment.
   bool get payOnProperty => _payOnProperty;
@@ -53,11 +57,26 @@ class ReservationFlowProvider extends ChangeNotifier {
   bool get isLoading => _isLoading;
   String? get error => _error;
 
-  double get totalPrice => _roomPricePerHour * _duration;
+  /// Price for a given booking slot (3h / 6h / 24h).
+  double priceForSlot(int hours) {
+    switch (hours) {
+      case 3:
+        return _price3h;
+      case 6:
+        return _price6h;
+      case 24:
+        return _price24h;
+      default:
+        return _price3h;
+    }
+  }
+
+  double get totalPrice => priceForSlot(_duration);
 
   String get checkOutTime {
     final parts = _selectedTime.split(':');
-    final hour = int.parse(parts[0]) + _duration;
+    // Wrap around midnight (e.g. a 24h slot ends at the same clock time).
+    final hour = (int.parse(parts[0]) + _duration) % 24;
     return '${hour.toString().padLeft(2, '0')}:${parts[1]}';
   }
 
@@ -66,13 +85,18 @@ class ReservationFlowProvider extends ChangeNotifier {
     required String roomId,
     required String roomName,
     required String hotelName,
-    required double pricePerHour,
+    required double price3h,
+    required double price6h,
+    required double price24h,
     bool payOnProperty = false,
   }) {
     _selectedRoomId = roomId;
     _roomName = roomName;
     _hotelName = hotelName;
-    _roomPricePerHour = pricePerHour;
+    _price3h = price3h;
+    _price6h = price6h;
+    _price24h = price24h;
+    _duration = 3;
     _payOnProperty = payOnProperty;
     _confirmedReservation = null;
     _error = null;
@@ -89,15 +113,13 @@ class ReservationFlowProvider extends ChangeNotifier {
     notifyListeners();
   }
 
-  void setDuration(int d) {
-    if (d >= 1 && d <= 12) {
-      _duration = d;
+  /// Select one of the fixed booking slots (3h / 6h / 24h).
+  void selectSlot(int hours) {
+    if (slots.contains(hours)) {
+      _duration = hours;
       notifyListeners();
     }
   }
-
-  void incrementDuration() => setDuration(_duration + 1);
-  void decrementDuration() => setDuration(_duration - 1);
 
   void setPaymentMethod(String method) {
     _selectedPaymentMethod = method;
@@ -255,7 +277,9 @@ class ReservationFlowProvider extends ChangeNotifier {
     _selectedRoomId = null;
     _roomName = null;
     _hotelName = null;
-    _roomPricePerHour = 50.0;
+    _price3h = 0;
+    _price6h = 0;
+    _price24h = 0;
     _payOnProperty = false;
     _selectedDate = DateTime.now();
     _selectedTime = '14:00';

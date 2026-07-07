@@ -76,7 +76,7 @@ class _PaymentScreenState extends State<PaymentScreen> {
               ),
             ],
             const SizedBox(height: 16),
-            _paymentOption(context, provider, paypalKey, 'PayPal', Icons.paypal),
+            _paymentOption(context, provider, paypalKey, 'PayPal', Icons.paypal, iconColor: _paypalBlue),
             if (!isCard) ...[
               const SizedBox(height: 12),
               _paypalInfo(context, l10n),
@@ -189,7 +189,7 @@ class _PaymentScreenState extends State<PaymentScreen> {
     return approved ?? false;
   }
 
-  Widget _paymentOption(BuildContext context, ReservationFlowProvider provider, String value, String title, IconData icon) {
+  Widget _paymentOption(BuildContext context, ReservationFlowProvider provider, String value, String title, IconData icon, {Color? iconColor}) {
     final sel = provider.selectedPaymentMethod == value;
     return GestureDetector(
       onTap: () => provider.setPaymentMethod(value),
@@ -200,7 +200,8 @@ class _PaymentScreenState extends State<PaymentScreen> {
           border: Border.all(color: sel ? AppColors.primaryBurgundy : AppColors.borderLight, width: 2),
         ),
         child: Row(children: [
-          Icon(icon, color: sel ? AppColors.primaryBurgundy : AppColors.textSecondary, size: 28),
+          // A brand icon (e.g. PayPal blue) keeps its colour regardless of selection.
+          Icon(icon, color: iconColor ?? (sel ? AppColors.primaryBurgundy : AppColors.textSecondary), size: 28),
           const SizedBox(width: 16),
           Expanded(child: Text(title, style: AppTextStyles.labelM)),
           Radio<String>(
@@ -212,4 +213,7 @@ class _PaymentScreenState extends State<PaymentScreen> {
       ),
     );
   }
+
+  /// PayPal's brand blue (Pantone 300 C ≈ #0070BA), used for the PayPal option.
+  static const Color _paypalBlue = Color(0xFF0070BA);
 }

@@ -44,17 +44,18 @@ class HomeProvider extends ChangeNotifier {
     }
   }
 
-  /// Get the minimum price for a hotel from its rooms.
+  /// Get the minimum 3-hour price for a hotel from its rooms (matches the
+  /// "/3 Horas" label shown on hotel cards).
   double getMinPriceForHotel(Hotel hotel) {
     if (hotel.rooms != null && hotel.rooms!.isNotEmpty) {
-      return hotel.rooms!.map((r) => r.pricePerHour).reduce((a, b) => a < b ? a : b);
+      return hotel.rooms!.map((r) => r.price3h).reduce((a, b) => a < b ? a : b);
     }
     // Fallback: check cached rooms
     final cached = _roomsByHotelId[hotel.id];
     if (cached != null && cached.isNotEmpty) {
-      return cached.map((r) => r.pricePerHour).reduce((a, b) => a < b ? a : b);
+      return cached.map((r) => r.price3h).reduce((a, b) => a < b ? a : b);
     }
-    return 50.0; // Default
+    return 0.0; // Default
   }
 
   Future<void> loadHotels() async {

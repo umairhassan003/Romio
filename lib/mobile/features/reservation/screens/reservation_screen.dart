@@ -73,15 +73,15 @@ class ReservationScreen extends StatelessWidget {
           ),
           const SizedBox(height: 32),
 
-          // Duration
-          Text(l10n?.reservationDurationLabel ?? 'Duración (horas)', style: AppTextStyles.headingM),
+          // Duration slots (3h / 6h / 24h)
+          Text(l10n?.reservationDurationLabel ?? 'Duración', style: AppTextStyles.headingM),
           const SizedBox(height: 16),
-          Row(mainAxisAlignment: MainAxisAlignment.center, children: [
-            _circleButton(Icons.remove, provider.duration > 1 ? () => provider.decrementDuration() : null),
-            const SizedBox(width: 24),
-            Text('${provider.duration} horas', style: AppTextStyles.headingXL),
-            const SizedBox(width: 24),
-            _circleButton(Icons.add, () => provider.incrementDuration()),
+          Row(children: [
+            Expanded(child: _slotCard(context, provider, 3)),
+            const SizedBox(width: 12),
+            Expanded(child: _slotCard(context, provider, 6)),
+            const SizedBox(width: 12),
+            Expanded(child: _slotCard(context, provider, 24)),
           ]),
           const SizedBox(height: 32),
 
@@ -200,12 +200,25 @@ class ReservationScreen extends StatelessWidget {
     }
   }
 
-  Widget _circleButton(IconData icon, VoidCallback? onTap) => GestureDetector(
-    onTap: onTap,
-    child: Container(
-      width: 40, height: 40,
-      decoration: BoxDecoration(shape: BoxShape.circle, color: onTap != null ? AppColors.primaryBurgundy : AppColors.backgroundPink),
-      child: Icon(icon, color: onTap != null ? AppColors.textOnPrimary : AppColors.textSecondary, size: 24),
-    ),
-  );
+  Widget _slotCard(BuildContext context, ReservationFlowProvider provider, int hours) {
+    final sel = provider.duration == hours;
+    return GestureDetector(
+      onTap: () => provider.selectSlot(hours),
+      child: Container(
+        padding: const EdgeInsets.symmetric(vertical: 16),
+        decoration: BoxDecoration(
+          color: sel ? AppColors.primaryBurgundy : AppColors.backgroundPink,
+          borderRadius: BorderRadius.circular(16),
+          border: Border.all(color: sel ? AppColors.primaryBurgundy : AppColors.borderLight),
+        ),
+        child: Column(children: [
+          Text('${hours}h',
+            style: AppTextStyles.headingS.copyWith(color: sel ? AppColors.textOnPrimary : AppColors.textPrimary)),
+          const SizedBox(height: 4),
+          Text('\$${provider.priceForSlot(hours).toStringAsFixed(0)}',
+            style: AppTextStyles.labelM.copyWith(color: sel ? AppColors.textOnPrimary : AppColors.primaryBurgundy)),
+        ]),
+      ),
+    );
+  }
 }
