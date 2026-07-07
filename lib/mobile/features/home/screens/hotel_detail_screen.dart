@@ -44,20 +44,20 @@ class _HotelDetailScreenState extends State<HotelDetailScreen> {
     final hotel = context.watch<HomeProvider>().getHotelById(widget.hotelId);
     if (hotel == null) {
       return Scaffold(
-        backgroundColor: AppColors.backgroundPink,
+        backgroundColor: AppColors.backgroundWhite,
         appBar: AppBar(),
         body: const Center(child: Text('Hotel no encontrado.')),
       );
     }
 
     return Scaffold(
-      backgroundColor: AppColors.backgroundPink,
+      backgroundColor: AppColors.backgroundWhite,
       body: CustomScrollView(
         slivers: [
           SliverAppBar(
             expandedHeight: 280,
             pinned: true,
-            backgroundColor: AppColors.backgroundPink,
+            backgroundColor: AppColors.backgroundWhite,
             leading: _circleBtn(Icons.arrow_back, () => Navigator.pop(context)),
             actions: [_circleBtn(Icons.bookmark_border, () {})],
             flexibleSpace: FlexibleSpaceBar(

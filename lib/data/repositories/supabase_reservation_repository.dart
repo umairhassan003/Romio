@@ -33,7 +33,7 @@ class SupabaseReservationRepository implements ReservationRepository {
   Future<List<Reservation>> getUserReservations(String profileId) async {
     final response = await _supabaseClient
         .from(tableName)
-        .select('*, rooms(*, hotels(*))') // Fetching room and hotel relation if available in schema
+        .select('*, rooms(*, hotels(*)), payments(*)') // Fetching room, hotel and payment relations
         .eq('profile_id', profileId)
         .order('created_at', ascending: false);
         
@@ -44,7 +44,7 @@ class SupabaseReservationRepository implements ReservationRepository {
   Future<Reservation?> getReservationById(String id) async {
     final response = await _supabaseClient
         .from(tableName)
-        .select('*, rooms(*, hotels(*))')
+        .select('*, rooms(*, hotels(*)), payments(*)')
         .eq('id', id)
         .maybeSingle();
         

@@ -21,7 +21,7 @@ class ConfirmationScreen extends StatelessWidget {
     final checkOut = reservation?.checkOutTime ?? provider.checkOutTime;
 
     return Scaffold(
-      backgroundColor: AppColors.backgroundPink,
+      backgroundColor: AppColors.backgroundWhite,
       body: SafeArea(
         child: Padding(
           padding: const EdgeInsets.all(24),
@@ -48,6 +48,51 @@ class ConfirmationScreen extends StatelessWidget {
                 textAlign: TextAlign.center,
                 style: AppTextStyles.bodyM.copyWith(color: AppColors.textSecondary),
               ),
+              if (reservation?.paymentProvider == 'pay_on_property') ...[
+                const SizedBox(height: 12),
+                Container(
+                  padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 10),
+                  decoration: BoxDecoration(
+                    color: AppColors.success.withValues(alpha: 0.12),
+                    borderRadius: BorderRadius.circular(12),
+                  ),
+                  child: Row(
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      const Icon(Icons.store_mall_directory_outlined, size: 16, color: AppColors.success),
+                      const SizedBox(width: 8),
+                      Flexible(
+                        child: Text(
+                          l10n?.confirmationPayOnProperty ?? 'Pagarás en la propiedad al llegar.',
+                          style: AppTextStyles.caption.copyWith(color: AppColors.success),
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+              ] else if (reservation?.paymentStatus == 'completed') ...[
+                const SizedBox(height: 12),
+                Container(
+                  padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 10),
+                  decoration: BoxDecoration(
+                    color: AppColors.success.withValues(alpha: 0.12),
+                    borderRadius: BorderRadius.circular(12),
+                  ),
+                  child: Row(
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      const Icon(Icons.check_circle_outline, size: 16, color: AppColors.success),
+                      const SizedBox(width: 8),
+                      Flexible(
+                        child: Text(
+                          l10n?.paymentStatusPaid ?? 'Pagado',
+                          style: AppTextStyles.caption.copyWith(color: AppColors.success),
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+              ],
               const SizedBox(height: 48),
 
               // Details card

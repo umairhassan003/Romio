@@ -79,6 +79,7 @@ class _HotelListScreenState extends State<HotelListScreen> {
                 DataColumn(label: Text(l.hotelColCity)),
                 DataColumn(label: Text(l.hotelColRooms)),
                 DataColumn(label: Text(l.hotelColRating)),
+                DataColumn(label: Text(l.hotelColPayOnProperty)),
                 DataColumn(label: Text(l.hotelColStatus)),
                 DataColumn(label: Text(l.hotelColActions)),
               ],
@@ -107,6 +108,7 @@ class _HotelListScreenState extends State<HotelListScreen> {
                       Text(hotel.rating.toStringAsFixed(1)),
                     ],
                   )),
+                  DataCell(StatusBadge(status: hotel.payOnProperty ? 'enabled' : 'disabled')),
                   DataCell(StatusBadge(status: hotel.isActive ? 'active' : 'inactive')),
                   DataCell(Row(
                     mainAxisSize: MainAxisSize.min,

@@ -32,12 +32,12 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
             },
             children: [
               _buildPage(
-                imageUrl: 'images/onboarding1.svg',
+                imageUrl: 'images/onboarding1.jpg',
                 title: 'Reserva',
                 subtitle: 'Encuentra las mejores opciones para ti.',
               ),
               _buildPage(
-                imageUrl: 'images/onboarding2.svg',
+                imageUrl: 'images/onboarding2.jpg',
                 title: 'Pagos 100% seguros',
                 subtitle: 'Paga con confianza en nuestra plataforma.',
               ),
@@ -107,7 +107,7 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
     return Stack(
       fit: StackFit.expand,
       children: [
-        SvgPicture.asset(
+        Image.asset(
           imageUrl,
           width: MediaQuery.of(context).size.width,
           height: MediaQuery.of(context).size.height,

@@ -8,7 +8,7 @@ class PaymentMethodScreen extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: AppColors.backgroundPink,
+      backgroundColor: AppColors.backgroundWhite,
       appBar: AppBar(
         title: const Text('Método de pago', style: AppTextStyles.headingS),
         backgroundColor: Colors.transparent,

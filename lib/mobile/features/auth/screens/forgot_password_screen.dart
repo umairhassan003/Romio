@@ -12,7 +12,7 @@ class ForgotPasswordScreen extends StatelessWidget {
     final l10n = AppLocalizations.of(context);
     
     return Scaffold(
-      backgroundColor: AppColors.backgroundPink,
+      backgroundColor: AppColors.backgroundWhite,
       appBar: AppBar(
         title: Text(l10n?.forgotPasswordTitle ?? 'Recupera tu contraseña', style: AppTextStyles.headingM),
         backgroundColor: Colors.transparent,

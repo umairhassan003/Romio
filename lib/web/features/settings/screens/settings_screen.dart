@@ -3,6 +3,7 @@ import 'package:supabase_flutter/supabase_flutter.dart';
 import 'package:flutter_gen/gen_l10n/app_localizations.dart';
 import '../../../../core/theme/app_colors.dart';
 import '../../../../domain/models/admin_user.dart';
+import '../../../core/config/settlement_config.dart';
 import '../../../core/widgets/romio_data_table.dart';
 import '../../../core/widgets/section_header.dart';
 import '../../../core/widgets/status_badge.dart';
@@ -25,6 +26,15 @@ class _SettingsScreenState extends State<SettingsScreen> {
   void initState() {
     super.initState();
     _loadAdmins();
+  }
+
+  /// Shows only the last 4 digits of the bank account number to limit
+  /// shoulder-surfing in the admin UI. Routing/SWIFT are public bank
+  /// identifiers and shown in full.
+  String _maskAccount(String account) {
+    if (account.length <= 4) return account;
+    final last4 = account.substring(account.length - 4);
+    return '•••• •••• $last4';
   }
 
   Future<void> _loadAdmins() async {
@@ -128,6 +138,34 @@ class _SettingsScreenState extends State<SettingsScreen> {
 
         if (_error != null) ErrorBanner(message: _error!, onRetry: _loadAdmins),
 
+        // ─── Payout / Settlement ─────────────────────────────────────────
+        SectionHeader(title: l.settingsPayoutTitle),
+        const SizedBox(height: 8),
+        Card(
+          child: Padding(
+            padding: const EdgeInsets.all(24),
+            child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
+              Text(l.settingsPayoutSubtitle,
+                  style: const TextStyle(color: AppColors.textSecondary, fontSize: 13)),
+              const SizedBox(height: 16),
+              _SettlementRow(label: l.settingsPayoutPaypalId, value: SettlementConfig.paypalMerchantId),
+              _SettlementRow(label: l.settingsPayoutPaypalEmail, value: SettlementConfig.paypalReceiverEmail),
+              const Divider(height: 24),
+              _SettlementRow(label: l.settingsPayoutRouting, value: SettlementConfig.bankRoutingNumber),
+              _SettlementRow(label: l.settingsPayoutAccount, value: _maskAccount(SettlementConfig.bankAccountNumber)),
+              _SettlementRow(label: l.settingsPayoutSwift, value: SettlementConfig.bankSwiftBic),
+              const SizedBox(height: 8),
+              Row(children: [
+                const Icon(Icons.lock_outline, size: 14, color: AppColors.textSecondary),
+                const SizedBox(width: 6),
+                Expanded(child: Text(l.settingsPayoutSecurityNote,
+                    style: const TextStyle(color: AppColors.textSecondary, fontSize: 12))),
+              ]),
+            ]),
+          ),
+        ),
+        const SizedBox(height: 32),
+
         Row(children: [
           Expanded(child: SectionHeader(title: l.settingsAdmins)),
           ElevatedButton.icon(
@@ -176,6 +214,29 @@ class _SettingsScreenState extends State<SettingsScreen> {
             emptyMessage: l.settingsEmptyMessage,
             emptyIcon: Icons.admin_panel_settings_outlined,
           ),
+        ),
+      ]),
+    );
+  }
+}
+
+class _SettlementRow extends StatelessWidget {
+  final String label;
+  final String value;
+  const _SettlementRow({required this.label, required this.value});
+
+  @override
+  Widget build(BuildContext context) {
+    return Padding(
+      padding: const EdgeInsets.only(bottom: 12),
+      child: Row(crossAxisAlignment: CrossAxisAlignment.start, children: [
+        SizedBox(
+          width: 180,
+          child: Text(label, style: const TextStyle(color: AppColors.textSecondary, fontSize: 13)),
+        ),
+        Expanded(
+          child: SelectableText(value,
+              style: const TextStyle(fontWeight: FontWeight.w600, fontFamily: 'monospace')),
         ),
       ]),
     );

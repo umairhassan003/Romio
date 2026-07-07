@@ -40,7 +40,7 @@ class _PersonalInfoScreenState extends State<PersonalInfoScreen> {
     final provider = context.watch<ProfileProvider>();
 
     return Scaffold(
-      backgroundColor: AppColors.backgroundPink,
+      backgroundColor: AppColors.backgroundWhite,
       appBar: AppBar(
         title: Text(l10n?.profilePersonalInfo ?? 'Información personal', style: AppTextStyles.headingS),
         backgroundColor: Colors.transparent, elevation: 0,

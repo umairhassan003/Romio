@@ -64,7 +64,7 @@ class _SignupScreenState extends State<SignupScreen> {
     final auth = context.watch<AuthProvider>();
     
     return Scaffold(
-      backgroundColor: AppColors.backgroundPink,
+      backgroundColor: AppColors.backgroundWhite,
       appBar: AppBar(
         title: Text(l10n?.signupTitle ?? 'Registrarse', style: AppTextStyles.headingM),
         backgroundColor: Colors.transparent,

@@ -18,6 +18,13 @@ class Reservation {
   final String? hotelName;
   final String? hotelAddress;
 
+  // Joined/enriched payment fields (from payments(*) query)
+  /// e.g. 'card', 'paypal', 'pay_on_property'
+  final String? paymentProvider;
+  /// e.g. 'completed', 'pending', 'failed'
+  final String? paymentStatus;
+  final DateTime? paidAt;
+
   const Reservation({
     required this.id,
     required this.profileId,
@@ -35,6 +42,9 @@ class Reservation {
     this.roomName,
     this.hotelName,
     this.hotelAddress,
+    this.paymentProvider,
+    this.paymentStatus,
+    this.paidAt,
   });
 
   factory Reservation.fromJson(Map<String, dynamic> json) {
@@ -51,6 +61,18 @@ class Reservation {
         hotelName = hotelData['name'] as String?;
         hotelAddress = hotelData['address'] as String?;
       }
+    }
+
+    // Extract joined payment data if present (first payment record)
+    String? paymentProvider;
+    String? paymentStatus;
+    DateTime? paidAt;
+    final paymentsData = json['payments'];
+    if (paymentsData is List && paymentsData.isNotEmpty) {
+      final p = paymentsData[0] as Map<String, dynamic>;
+      paymentProvider = p['provider'] as String?;
+      paymentStatus = p['status'] as String?;
+      if (p['paid_at'] != null) paidAt = DateTime.tryParse(p['paid_at']);
     }
 
     return Reservation(
@@ -70,6 +92,9 @@ class Reservation {
       roomName: roomName,
       hotelName: hotelName,
       hotelAddress: hotelAddress,
+      paymentProvider: paymentProvider,
+      paymentStatus: paymentStatus,
+      paidAt: paidAt,
     );
   }
 
@@ -108,6 +133,9 @@ class Reservation {
     String? roomName,
     String? hotelName,
     String? hotelAddress,
+    String? paymentProvider,
+    String? paymentStatus,
+    DateTime? paidAt,
   }) {
     return Reservation(
       id: id ?? this.id,
@@ -126,6 +154,9 @@ class Reservation {
       roomName: roomName ?? this.roomName,
       hotelName: hotelName ?? this.hotelName,
       hotelAddress: hotelAddress ?? this.hotelAddress,
+      paymentProvider: paymentProvider ?? this.paymentProvider,
+      paymentStatus: paymentStatus ?? this.paymentStatus,
+      paidAt: paidAt ?? this.paidAt,
     );
   }
 }

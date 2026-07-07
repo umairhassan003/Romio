@@ -29,7 +29,8 @@ class _MyReservationsScreenState extends State<MyReservationsScreen> {
           // Load profile first, then reservations
           context.read<ProfileProvider>().loadProfile(user.id).then((_) {
             final p = context.read<ProfileProvider>().profile;
-            if (p != null) context.read<MyReservationsProvider>().loadUserReservations(p.id);
+            if (p != null)
+              context.read<MyReservationsProvider>().loadUserReservations(p.id);
           });
         }
       }
@@ -42,36 +43,61 @@ class _MyReservationsScreenState extends State<MyReservationsScreen> {
     final provider = context.watch<MyReservationsProvider>();
 
     return Scaffold(
-      backgroundColor: AppColors.backgroundPink,
+      backgroundColor: AppColors.backgroundWhite,
       appBar: AppBar(
-        title: Text(l10n?.myReservationTitle ?? 'Mi Reserva', style: AppTextStyles.headingM),
-        backgroundColor: Colors.transparent, elevation: 0,
+        title: Text(
+          l10n?.myReservationTitle ?? 'Mi Reserva',
+          style: AppTextStyles.headingM,
+        ),
+        backgroundColor: Colors.transparent,
+        elevation: 0,
         automaticallyImplyLeading: false,
         leading: IconButton(
           icon: const Icon(Icons.arrow_back, color: AppColors.primaryBurgundy),
           onPressed: () {},
         ),
       ),
-      body: provider.isLoading
-          ? const Center(child: CircularProgressIndicator(color: AppColors.primaryBurgundy))
-          : provider.upcomingReservations.isEmpty
+      body:
+          provider.isLoading
+              ? const Center(
+                child: CircularProgressIndicator(
+                  color: AppColors.primaryBurgundy,
+                ),
+              )
+              : provider.upcomingReservations.isEmpty
               ? _emptyState(l10n)
               : _reservationsList(context, provider, l10n),
     );
   }
 
   Widget _emptyState(AppLocalizations? l10n) => Center(
-    child: Column(mainAxisAlignment: MainAxisAlignment.center, children: [
-      Icon(Icons.event_busy, size: 80, color: AppColors.textSecondary.withOpacity(0.5)),
-      const SizedBox(height: 24),
-      Text(l10n?.reservationEmptyTitle ?? 'Nada planeado', style: AppTextStyles.headingM),
-      const SizedBox(height: 8),
-      Text(l10n?.reservationEmptyBody ?? 'No tiene ninguna reserva próxima',
-        style: AppTextStyles.bodyM.copyWith(color: AppColors.textSecondary)),
-    ]),
+    child: Column(
+      mainAxisAlignment: MainAxisAlignment.center,
+      children: [
+        Icon(
+          Icons.event_busy,
+          size: 80,
+          color: AppColors.textSecondary.withOpacity(0.5),
+        ),
+        const SizedBox(height: 24),
+        Text(
+          l10n?.reservationEmptyTitle ?? 'Nada planeado',
+          style: AppTextStyles.headingM,
+        ),
+        const SizedBox(height: 8),
+        Text(
+          l10n?.reservationEmptyBody ?? 'No tiene ninguna reserva próxima',
+          style: AppTextStyles.bodyM.copyWith(color: AppColors.textSecondary),
+        ),
+      ],
+    ),
   );
 
-  Widget _reservationsList(BuildContext context, MyReservationsProvider provider, AppLocalizations? l10n) {
+  Widget _reservationsList(
+    BuildContext context,
+    MyReservationsProvider provider,
+    AppLocalizations? l10n,
+  ) {
     final reservations = provider.upcomingReservations;
     return ListView.builder(
       padding: const EdgeInsets.all(24),
@@ -80,7 +106,10 @@ class _MyReservationsScreenState extends State<MyReservationsScreen> {
         if (i == 0) {
           return Padding(
             padding: const EdgeInsets.only(bottom: 16),
-            child: Text(l10n?.reservationUpcoming ?? 'Próximamente', style: AppTextStyles.headingS),
+            child: Text(
+              l10n?.reservationUpcoming ?? 'Próximamente',
+              style: AppTextStyles.headingS,
+            ),
           );
         }
         return _ReservationCard(
@@ -99,7 +128,11 @@ class _ReservationCard extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final dateStr = DateFormat('d MMMM', 'es').format(reservation.reservationDate);
+    final l10n = AppLocalizations.of(context);
+    final dateStr = DateFormat(
+      'd MMMM',
+      'es',
+    ).format(reservation.reservationDate);
     final timeStr = reservation.checkInTime;
     final roomName = reservation.roomName ?? 'Habitación';
     final hotelName = reservation.hotelName ?? 'Hotel';
@@ -110,54 +143,190 @@ class _ReservationCard extends StatelessWidget {
       margin: const EdgeInsets.only(bottom: 16),
       padding: const EdgeInsets.all(16),
       decoration: BoxDecoration(
-        color: AppColors.backgroundWhite, borderRadius: BorderRadius.circular(16),
-        boxShadow: [BoxShadow(color: Colors.black.withOpacity(0.04), blurRadius: 6, offset: const Offset(0, 2))],
-      ),
-      child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
-        // Top row: date/time + reminder toggle
-        Row(children: [
-          const Icon(Icons.calendar_today, size: 16, color: AppColors.primaryBurgundy),
-          const SizedBox(width: 8),
-          Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
-            Text(dateStr, style: AppTextStyles.labelM),
-            Text(timeStr, style: AppTextStyles.caption.copyWith(color: AppColors.textSecondary)),
-          ]),
-          const Spacer(),
-          Column(crossAxisAlignment: CrossAxisAlignment.end, children: [
-            Text('Recuérdamelo', style: AppTextStyles.caption.copyWith(color: AppColors.primaryBurgundy)),
-            Text(roomName, style: AppTextStyles.caption.copyWith(color: AppColors.textSecondary)),
-          ]),
-          const SizedBox(width: 4),
-          Switch(
-            value: reminderOn,
-            activeColor: AppColors.primaryBurgundy,
-            onChanged: (v) => provider.toggleReminder(reservation.id, v),
+        color: AppColors.backgroundPink,
+        borderRadius: BorderRadius.circular(16),
+        boxShadow: [
+          BoxShadow(
+            color: Colors.black.withOpacity(0.04),
+            blurRadius: 6,
+            offset: const Offset(0, 2),
           ),
-        ]),
-        const Divider(height: 24, color: AppColors.borderLight),
-        // Bottom: hotel info + check in/out
-        Row(children: [
-          Expanded(child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
-            Text(hotelName, style: AppTextStyles.labelM),
-            const SizedBox(height: 2),
-            Row(children: [
-              const Icon(Icons.location_on, size: 12, color: AppColors.textSecondary),
-              const SizedBox(width: 2),
-              Expanded(child: Text(hotelAddr, style: AppTextStyles.caption.copyWith(color: AppColors.textSecondary), maxLines: 1, overflow: TextOverflow.ellipsis)),
-            ]),
-          ])),
-          const SizedBox(width: 8),
-          Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
-            Text('Check In', style: AppTextStyles.caption.copyWith(color: AppColors.textSecondary, fontWeight: FontWeight.w600)),
-            Text(reservation.checkInTime, style: AppTextStyles.labelM),
-          ]),
-          const SizedBox(width: 16),
-          Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
-            Text('Check Out', style: AppTextStyles.caption.copyWith(color: AppColors.textSecondary, fontWeight: FontWeight.w600)),
-            Text(reservation.checkOutTime, style: AppTextStyles.labelM),
-          ]),
-        ]),
-      ]),
+        ],
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          // Top row: date/time + reminder toggle
+          Row(
+            children: [
+              const Icon(
+                Icons.calendar_today,
+                size: 16,
+                color: AppColors.primaryBurgundy,
+              ),
+              const SizedBox(width: 8),
+              Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(dateStr, style: AppTextStyles.labelM),
+                  Text(
+                    timeStr,
+                    style: AppTextStyles.caption.copyWith(
+                      color: AppColors.textSecondary,
+                    ),
+                  ),
+                ],
+              ),
+              const Spacer(),
+              Column(
+                crossAxisAlignment: CrossAxisAlignment.end,
+                children: [
+                  Text(
+                    'Recuérdamelo',
+                    style: AppTextStyles.caption.copyWith(
+                      color: AppColors.primaryBurgundy,
+                    ),
+                  ),
+                  Text(
+                    roomName,
+                    style: AppTextStyles.caption.copyWith(
+                      color: AppColors.textSecondary,
+                    ),
+                  ),
+                ],
+              ),
+              const SizedBox(width: 4),
+              Switch(
+                value: reminderOn,
+                activeColor: AppColors.primaryBurgundy,
+                onChanged: (v) => provider.toggleReminder(reservation.id, v),
+              ),
+            ],
+          ),
+          const Divider(height: 24, color: AppColors.borderLight),
+          // Bottom: hotel info + check in/out
+          Row(
+            children: [
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(hotelName, style: AppTextStyles.labelM),
+                    const SizedBox(height: 2),
+                    Row(
+                      children: [
+                        const Icon(
+                          Icons.location_on,
+                          size: 12,
+                          color: AppColors.textSecondary,
+                        ),
+                        const SizedBox(width: 2),
+                        Expanded(
+                          child: Text(
+                            hotelAddr,
+                            style: AppTextStyles.caption.copyWith(
+                              color: AppColors.textSecondary,
+                            ),
+                            maxLines: 1,
+                            overflow: TextOverflow.ellipsis,
+                          ),
+                        ),
+                      ],
+                    ),
+                  ],
+                ),
+              ),
+              const SizedBox(width: 8),
+              Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(
+                    'Check In',
+                    style: AppTextStyles.caption.copyWith(
+                      color: AppColors.textSecondary,
+                      fontWeight: FontWeight.w600,
+                    ),
+                  ),
+                  Text(reservation.checkInTime, style: AppTextStyles.labelM),
+                ],
+              ),
+              const SizedBox(width: 16),
+              Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(
+                    'Check Out',
+                    style: AppTextStyles.caption.copyWith(
+                      color: AppColors.textSecondary,
+                      fontWeight: FontWeight.w600,
+                    ),
+                  ),
+                  Text(reservation.checkOutTime, style: AppTextStyles.labelM),
+                ],
+              ),
+            ],
+          ),
+          const Divider(height: 24, color: AppColors.borderLight),
+          Row(
+            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+            children: [
+              _paymentStatusBadge(context, l10n),
+              Text(
+                '\$${reservation.totalPrice.toStringAsFixed(0)}',
+                style: AppTextStyles.labelM.copyWith(
+                  color: AppColors.primaryBurgundy,
+                ),
+              ),
+            ],
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _paymentStatusBadge(BuildContext context, AppLocalizations? l10n) {
+    final providerKey = reservation.paymentProvider;
+    final status = reservation.paymentStatus;
+
+    Color color;
+    String label;
+    IconData icon;
+
+    if (providerKey == 'pay_on_property') {
+      color = AppColors.warning;
+      label = l10n?.paymentStatusPayAtProperty ?? 'Pago en la propiedad';
+      icon = Icons.store_mall_directory_outlined;
+    } else if (status == 'completed') {
+      color = AppColors.success;
+      label = l10n?.paymentStatusPaid ?? 'Pagado';
+      icon = Icons.check_circle_outline;
+    } else {
+      color = AppColors.textSecondary;
+      label = l10n?.paymentStatusPending ?? 'Pago pendiente';
+      icon = Icons.hourglass_empty;
+    }
+
+    return Container(
+      padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+      decoration: BoxDecoration(
+        color: color.withValues(alpha: 0.1),
+        borderRadius: BorderRadius.circular(8),
+        border: Border.all(color: color.withValues(alpha: 0.3)),
+      ),
+      child: Row(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          Icon(icon, size: 12, color: color),
+          const SizedBox(width: 4),
+          Text(
+            label,
+            style: AppTextStyles.caption.copyWith(
+              color: color,
+              fontWeight: FontWeight.w600,
+            ),
+          ),
+        ],
+      ),
     );
   }
 }

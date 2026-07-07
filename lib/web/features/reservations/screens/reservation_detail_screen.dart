@@ -68,6 +68,39 @@ class _ReservationDetailScreenState extends State<ReservationDetailScreen> {
           if (res.cancelledAt != null) _InfoRow(label: l.reservationDetailCancelled, value: res.cancelledAt.toString().split('.')[0]),
         ]))),
         const SizedBox(height: 16),
+        Card(
+          child: Padding(
+            padding: const EdgeInsets.all(24),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                SectionHeader(title: l.reservationDetailPayment),
+                _InfoRow(
+                  label: l.reservationDetailPaymentProvider,
+                  value: res.paymentProvider == 'pay_on_property'
+                      ? (l.payOnPropertyOption)
+                      : (res.paymentProvider?.toUpperCase() ?? '—'),
+                ),
+                _InfoRow(
+                  label: l.reservationDetailPaymentStatus,
+                  value: res.paymentStatus == 'completed'
+                      ? l.paymentStatusPaid
+                      : (res.paymentStatus == 'pending'
+                          ? (res.paymentProvider == 'pay_on_property'
+                              ? l.paymentStatusPayAtProperty
+                              : l.paymentStatusPending)
+                          : (res.paymentStatus ?? '—')),
+                ),
+                if (res.paidAt != null)
+                  _InfoRow(
+                    label: l.reservationDetailPaidAt,
+                    value: res.paidAt.toString().split('.')[0],
+                  ),
+              ],
+            ),
+          ),
+        ),
+        const SizedBox(height: 16),
         // Status actions
         Card(child: Padding(padding: const EdgeInsets.all(24), child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
           SectionHeader(title: l.reservationChangeStatus),

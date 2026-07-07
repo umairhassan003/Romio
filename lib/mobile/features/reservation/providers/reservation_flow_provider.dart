@@ -1,23 +1,28 @@
 import 'dart:math';
 import 'package:flutter/foundation.dart';
+import '../../../../core/constants/payment_constants.dart';
 import '../../../../domain/models/reservation.dart';
 import '../../../../domain/models/payment.dart';
+import '../../../../domain/gateways/payment_gateway.dart';
 import '../../../../domain/repositories/reservation_repository.dart';
 import '../../../../domain/repositories/payment_repository.dart';
 
 class ReservationFlowProvider extends ChangeNotifier {
   final ReservationRepository _reservationRepository;
   final PaymentRepository _paymentRepository;
+  final PaymentGateway _paymentGateway;
 
   // Flow state
   String? _selectedRoomId;
   String? _roomName;
   String? _hotelName;
   double _roomPricePerHour = 50.0;
+  bool _payOnProperty = false;
   DateTime _selectedDate = DateTime.now();
   String _selectedTime = '14:00';
   int _duration = 3;
-  String _selectedPaymentMethod = 'credit_card';
+  // 'card' (credit/debit via PayPal) or 'paypal'.
+  String _selectedPaymentMethod = PaymentMethodType.card.providerKey;
 
   // Results
   Reservation? _confirmedReservation;
@@ -27,14 +32,19 @@ class ReservationFlowProvider extends ChangeNotifier {
   ReservationFlowProvider({
     required ReservationRepository reservationRepository,
     required PaymentRepository paymentRepository,
+    required PaymentGateway paymentGateway,
   })  : _reservationRepository = reservationRepository,
-        _paymentRepository = paymentRepository;
+        _paymentRepository = paymentRepository,
+        _paymentGateway = paymentGateway;
 
   // Getters
   String? get selectedRoomId => _selectedRoomId;
   String? get roomName => _roomName;
   String? get hotelName => _hotelName;
   double get roomPricePerHour => _roomPricePerHour;
+
+  /// Whether the selected room's hotel allows reserving without upfront payment.
+  bool get payOnProperty => _payOnProperty;
   DateTime get selectedDate => _selectedDate;
   String get selectedTime => _selectedTime;
   int get duration => _duration;
@@ -57,11 +67,13 @@ class ReservationFlowProvider extends ChangeNotifier {
     required String roomName,
     required String hotelName,
     required double pricePerHour,
+    bool payOnProperty = false,
   }) {
     _selectedRoomId = roomId;
     _roomName = roomName;
     _hotelName = hotelName;
     _roomPricePerHour = pricePerHour;
+    _payOnProperty = payOnProperty;
     _confirmedReservation = null;
     _error = null;
     notifyListeners();
@@ -92,15 +104,24 @@ class ReservationFlowProvider extends ChangeNotifier {
     notifyListeners();
   }
 
-  /// Generate a reservation code like #RM-XXXX
+  /// Generate a reservation code like RM-XXXX
   String _generateCode() {
     final rng = Random();
     final num = rng.nextInt(9000) + 1000;
     return 'RM-$num';
   }
 
-  /// Creates the reservation + payment in Supabase.
-  Future<bool> confirmAndPay(String profileId) async {
+  /// Charges the guest via the payment gateway, then persists the reservation
+  /// and a matching payment record. Charging happens *before* the reservation
+  /// is written, so a declined/failed payment never leaves an orphan booking.
+  ///
+  /// [card] is required when the selected method is 'card'. [onApprovalRequired]
+  /// is supplied by the UI to handle the PayPal-wallet approval round-trip.
+  Future<bool> confirmAndPay(
+    String profileId, {
+    CardDetails? card,
+    PayPalApprovalCallback? onApprovalRequired,
+  }) async {
     if (_selectedRoomId == null) return false;
 
     _isLoading = true;
@@ -108,41 +129,35 @@ class ReservationFlowProvider extends ChangeNotifier {
     notifyListeners();
 
     try {
-      final now = DateTime.now();
       final code = _generateCode();
+      final method = PaymentMethodType.fromKey(_selectedPaymentMethod);
 
-      // 1. Create reservation
-      final reservation = Reservation(
-        id: '',
+      // 1. Attempt the charge first.
+      final result = await _paymentGateway.charge(
+        PaymentChargeRequest(
+          amount: totalPrice,
+          currency: PaymentConstants.currency,
+          method: method,
+          reservationCode: code,
+          card: method == PaymentMethodType.card ? card : null,
+          onApprovalRequired: onApprovalRequired,
+        ),
+      );
+
+      if (!result.isSuccess) {
+        _error = result.errorMessage ?? 'Payment failed. Please try again.';
+        return false;
+      }
+
+      // 2. Persist the booking + payment now that the charge succeeded.
+      await _persistBooking(
         profileId: profileId,
-        roomId: _selectedRoomId!,
-        reservationCode: code,
-        reservationDate: _selectedDate,
-        checkInTime: _selectedTime,
-        checkOutTime: checkOutTime,
-        durationHours: _duration,
-        totalPrice: totalPrice,
-        status: 'confirmed',
-        createdAt: now,
-        updatedAt: now,
-        roomName: _roomName,
-        hotelName: _hotelName,
+        code: code,
+        provider: method.providerKey,
+        paymentStatus: result.status,
+        providerReference: result.providerReference,
+        paidAt: result.status == 'completed' ? DateTime.now() : null,
       );
-
-      _confirmedReservation = await _reservationRepository.createReservation(reservation);
-
-      // 2. Create payment record
-      final payment = Payment(
-        id: '',
-        reservationId: _confirmedReservation!.id,
-        amount: totalPrice,
-        currency: 'USD',
-        provider: _selectedPaymentMethod,
-        status: 'completed',
-        paidAt: now,
-      );
-
-      await _paymentRepository.createPayment(payment);
 
       return true;
     } catch (e) {
@@ -155,16 +170,97 @@ class ReservationFlowProvider extends ChangeNotifier {
     }
   }
 
+  /// Creates the reservation without taking payment upfront. Only valid when
+  /// the room's hotel has "Pay on Property" enabled. The payment row is
+  /// recorded as pending, to be collected at the property.
+  Future<bool> reserveOnProperty(String profileId) async {
+    if (_selectedRoomId == null) return false;
+
+    _isLoading = true;
+    _error = null;
+    notifyListeners();
+
+    try {
+      await _persistBooking(
+        profileId: profileId,
+        code: _generateCode(),
+        provider: 'pay_on_property',
+        paymentStatus: 'pending',
+        providerReference: null,
+        paidAt: null,
+      );
+      return true;
+    } catch (e) {
+      _error = e.toString();
+      debugPrint('Error reserving (pay on property): $e');
+      return false;
+    } finally {
+      _isLoading = false;
+      notifyListeners();
+    }
+  }
+
+  Future<void> _persistBooking({
+    required String profileId,
+    required String code,
+    required String provider,
+    required String paymentStatus,
+    String? providerReference,
+    DateTime? paidAt,
+  }) async {
+    final now = DateTime.now();
+
+    final reservation = Reservation(
+      id: '',
+      profileId: profileId,
+      roomId: _selectedRoomId!,
+      reservationCode: code,
+      reservationDate: _selectedDate,
+      checkInTime: _selectedTime,
+      checkOutTime: checkOutTime,
+      durationHours: _duration,
+      totalPrice: totalPrice,
+      status: 'confirmed',
+      createdAt: now,
+      updatedAt: now,
+      roomName: _roomName,
+      hotelName: _hotelName,
+    );
+
+    final createdRes =
+        await _reservationRepository.createReservation(reservation);
+
+    final payment = Payment(
+      id: '',
+      reservationId: createdRes.id,
+      amount: totalPrice,
+      currency: PaymentConstants.currency,
+      provider: provider,
+      status: paymentStatus,
+      providerReference: providerReference,
+      paidAt: paidAt,
+    );
+
+    await _paymentRepository.createPayment(payment);
+
+    _confirmedReservation = createdRes.copyWith(
+      paymentProvider: provider,
+      paymentStatus: paymentStatus,
+      paidAt: paidAt,
+    );
+  }
+
   /// Resets the flow for a new reservation.
   void resetFlow() {
     _selectedRoomId = null;
     _roomName = null;
     _hotelName = null;
     _roomPricePerHour = 50.0;
+    _payOnProperty = false;
     _selectedDate = DateTime.now();
     _selectedTime = '14:00';
     _duration = 3;
-    _selectedPaymentMethod = 'credit_card';
+    _selectedPaymentMethod = PaymentMethodType.card.providerKey;
     _confirmedReservation = null;
     _error = null;
     notifyListeners();

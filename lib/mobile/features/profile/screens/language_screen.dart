@@ -17,7 +17,7 @@ class LanguageScreen extends StatelessWidget {
     final selected = localeProvider.languageCode;
 
     return Scaffold(
-      backgroundColor: AppColors.backgroundPink,
+      backgroundColor: AppColors.backgroundWhite,
       appBar: AppBar(
         title: Text(l10n?.profileLanguageTitle ?? 'Idioma', style: AppTextStyles.headingS),
         backgroundColor: Colors.transparent, elevation: 0,

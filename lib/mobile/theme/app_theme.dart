@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart' show SystemUiOverlayStyle;
 import '../../core/theme/app_colors.dart';
 import '../../core/theme/app_text_styles.dart';
 
@@ -12,24 +13,34 @@ class AppTheme {
     return ThemeData(
       useMaterial3: true,
       brightness: Brightness.light,
-      scaffoldBackgroundColor: AppColors.backgroundPink,
+      scaffoldBackgroundColor: AppColors.backgroundWhite,
       colorScheme: ColorScheme.fromSeed(
         seedColor: AppColors.primaryBurgundy,
         primary: AppColors.primaryBurgundy,
         onPrimary: AppColors.textOnPrimary,
+        secondary: AppColors.primaryBurgundyLight,
+        onSecondary: AppColors.textOnPrimary,
         surface: AppColors.backgroundWhite,
         onSurface: AppColors.textPrimary,
+        surfaceContainerLowest: AppColors.backgroundPink,
+        surfaceContainerHighest: AppColors.surfaceLight,
+        outline: AppColors.borderLight,
         error: AppColors.error,
       ),
 
-      // AppBar
-      appBarTheme: const AppBarTheme(
+      // AppBar — transparent over the pink scaffold, dark status-bar icons.
+      appBarTheme: AppBarTheme(
         backgroundColor: Colors.transparent,
         elevation: 0,
         scrolledUnderElevation: 0,
         centerTitle: true,
-        iconTheme: IconThemeData(color: AppColors.primaryBurgundy),
-        titleTextStyle: AppTextStyles.headingM,
+        iconTheme: const IconThemeData(color: AppColors.primaryBurgundy),
+        titleTextStyle: AppTextStyles.headingM.copyWith(color: AppColors.primaryBurgundy),
+        systemOverlayStyle: const SystemUiOverlayStyle(
+          statusBarColor: Colors.transparent,
+          statusBarIconBrightness: Brightness.dark,
+          statusBarBrightness: Brightness.light,
+        ),
       ),
 
       // Bottom Navigation
@@ -87,9 +98,18 @@ class AppTheme {
           return AppColors.textSecondary;
         }),
         trackColor: WidgetStateProperty.resolveWith((states) {
-          if (states.contains(WidgetState.selected)) return AppColors.primaryBurgundyLight.withOpacity(0.4);
+          if (states.contains(WidgetState.selected)) return AppColors.primaryBurgundyLight.withValues(alpha: 0.4);
           return AppColors.borderLight;
         }),
+      ),
+
+      // SnackBar — burgundy surface, white text, floating rounded.
+      snackBarTheme: SnackBarThemeData(
+        backgroundColor: AppColors.primaryBurgundy,
+        contentTextStyle: AppTextStyles.bodyM.copyWith(color: AppColors.textOnPrimary),
+        actionTextColor: AppColors.backgroundPink,
+        behavior: SnackBarBehavior.floating,
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
       ),
     );
   }

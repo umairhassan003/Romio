@@ -54,13 +54,13 @@ class _RoomDetailScreenState extends State<RoomDetailScreen> {
 
     if (_loading) {
       return const Scaffold(
-        backgroundColor: AppColors.backgroundPink,
+        backgroundColor: AppColors.backgroundWhite,
         body: Center(child: CircularProgressIndicator(color: AppColors.primaryBurgundy)),
       );
     }
     if (_room == null) {
       return Scaffold(
-        backgroundColor: AppColors.backgroundPink,
+        backgroundColor: AppColors.backgroundWhite,
         appBar: AppBar(),
         body: const Center(child: Text('Habitación no encontrada.')),
       );
@@ -71,13 +71,13 @@ class _RoomDetailScreenState extends State<RoomDetailScreen> {
     final price = room.pricePerHour;
 
     return Scaffold(
-      backgroundColor: AppColors.backgroundPink,
+      backgroundColor: AppColors.backgroundWhite,
       body: CustomScrollView(
         slivers: [
           SliverAppBar(
             expandedHeight: 280,
             pinned: true,
-            backgroundColor: AppColors.backgroundPink,
+            backgroundColor: AppColors.backgroundWhite,
             leading: _circleBtn(Icons.arrow_back, () => Navigator.pop(context)),
             actions: [_circleBtn(Icons.bookmark_border, () {})],
             flexibleSpace: FlexibleSpaceBar(
@@ -136,6 +136,7 @@ class _RoomDetailScreenState extends State<RoomDetailScreen> {
                 context.read<ReservationFlowProvider>().setRoom(
                   roomId: room.id, roomName: room.name,
                   hotelName: hotel?.name ?? '', pricePerHour: price,
+                  payOnProperty: hotel?.payOnProperty ?? false,
                 );
                 context.push('/reservation/${room.id}');
               },

@@ -37,92 +37,125 @@ class _HomeScreenState extends State<HomeScreen> {
     final userName = profileProvider.displayName;
 
     return Scaffold(
-      backgroundColor: AppColors.backgroundPink,
-      body: homeProvider.isLoading && homeProvider.hotels.isEmpty
-          ? const Center(child: CircularProgressIndicator(color: AppColors.primaryBurgundy))
-          : SafeArea(
-              child: RefreshIndicator(
-                color: AppColors.primaryBurgundy,
-                onRefresh: () => homeProvider.loadHotels(),
-                child: SingleChildScrollView(
-                  physics: const AlwaysScrollableScrollPhysics(),
-                  child: Padding(
-                    padding: const EdgeInsets.only(top: 24.0, bottom: 16.0),
-                    child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        // ── Greeting ────────────────────────────
-                        Padding(
-                          padding: const EdgeInsets.symmetric(horizontal: 24.0),
-                          child: Text(
-                            '${l10n?.homeGreeting ?? '¡Hola'}, $userName!',
-                            style: AppTextStyles.bodyM.copyWith(color: AppColors.primaryBurgundyLight),
+      backgroundColor: AppColors.backgroundWhite,
+      body:
+          homeProvider.isLoading && homeProvider.hotels.isEmpty
+              ? const Center(
+                child: CircularProgressIndicator(
+                  color: AppColors.primaryBurgundy,
+                ),
+              )
+              : SafeArea(
+                child: RefreshIndicator(
+                  color: AppColors.primaryBurgundy,
+                  onRefresh: () => homeProvider.loadHotels(),
+                  child: SingleChildScrollView(
+                    physics: const AlwaysScrollableScrollPhysics(),
+                    child: Padding(
+                      padding: const EdgeInsets.only(top: 24.0, bottom: 16.0),
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          // ── Greeting ────────────────────────────
+                          Padding(
+                            padding: const EdgeInsets.symmetric(
+                              horizontal: 24.0,
+                            ),
+                            child: Text(
+                              '${l10n?.homeGreeting ?? '¡Hola'}, $userName!',
+                              style: AppTextStyles.bodyM.copyWith(
+                                color: AppColors.primaryBurgundyLight,
+                              ),
+                            ),
                           ),
-                        ),
-                        const SizedBox(height: 4),
-                        Padding(
-                          padding: const EdgeInsets.symmetric(horizontal: 24.0),
-                          child: Text(
-                            l10n?.homeFindHotel ?? 'Encuentre su mejor hotel',
-                            style: AppTextStyles.headingXL,
+                          const SizedBox(height: 4),
+                          Padding(
+                            padding: const EdgeInsets.symmetric(
+                              horizontal: 24.0,
+                            ),
+                            child: Text(
+                              l10n?.homeFindHotel ?? 'Encuentre su mejor hotel',
+                              style: AppTextStyles.headingXL,
+                            ),
                           ),
-                        ),
-                        const SizedBox(height: 24),
+                          const SizedBox(height: 24),
 
-                        // ── Recommended section ─────────────────
-                        Padding(
-                          padding: const EdgeInsets.symmetric(horizontal: 24.0),
-                          child: Text(
-                            l10n?.homeRecommendedTitle ?? 'Recomendado',
-                            style: AppTextStyles.headingM,
+                          // ── Recommended section ─────────────────
+                          Padding(
+                            padding: const EdgeInsets.symmetric(
+                              horizontal: 24.0,
+                            ),
+                            child: Text(
+                              l10n?.homeRecommendedTitle ?? 'Recomendado',
+                              style: AppTextStyles.headingM,
+                            ),
                           ),
-                        ),
-                        const SizedBox(height: 16),
-                        SizedBox(
-                          height: 260,
-                          child: homeProvider.hotels.isEmpty
-                              ? Center(child: Text(l10n?.homeNoHotels ?? 'No hay hoteles disponibles'))
-                              : ListView.builder(
-                                  padding: const EdgeInsets.symmetric(horizontal: 16.0),
-                                  scrollDirection: Axis.horizontal,
-                                  itemCount: homeProvider.hotels.length > 5 ? 5 : homeProvider.hotels.length,
-                                  itemBuilder: (context, index) {
-                                    return _RecommendedCard(
-                                      hotel: homeProvider.hotels[index],
-                                      minPrice: homeProvider.getMinPriceForHotel(homeProvider.hotels[index]),
-                                    );
-                                  },
+                          const SizedBox(height: 16),
+                          SizedBox(
+                            height: 260,
+                            child:
+                                homeProvider.hotels.isEmpty
+                                    ? Center(
+                                      child: Text(
+                                        l10n?.homeNoHotels ??
+                                            'No hay hoteles disponibles',
+                                      ),
+                                    )
+                                    : ListView.builder(
+                                      padding: const EdgeInsets.symmetric(
+                                        horizontal: 16.0,
+                                      ),
+                                      scrollDirection: Axis.horizontal,
+                                      itemCount:
+                                          homeProvider.hotels.length > 5
+                                              ? 5
+                                              : homeProvider.hotels.length,
+                                      itemBuilder: (context, index) {
+                                        return _RecommendedCard(
+                                          hotel: homeProvider.hotels[index],
+                                          minPrice: homeProvider
+                                              .getMinPriceForHotel(
+                                                homeProvider.hotels[index],
+                                              ),
+                                        );
+                                      },
+                                    ),
+                          ),
+                          const SizedBox(height: 28),
+
+                          // ── All hotels section ──────────────────
+                          Padding(
+                            padding: const EdgeInsets.symmetric(
+                              horizontal: 24.0,
+                            ),
+                            child: Text(
+                              l10n?.homeAllHotelsTitle ?? 'Todos los hoteles',
+                              style: AppTextStyles.headingM,
+                            ),
+                          ),
+                          const SizedBox(height: 16),
+                          ListView.builder(
+                            padding: const EdgeInsets.symmetric(
+                              horizontal: 24.0,
+                            ),
+                            physics: const NeverScrollableScrollPhysics(),
+                            shrinkWrap: true,
+                            itemCount: homeProvider.hotels.length,
+                            itemBuilder: (context, index) {
+                              return _HotelListCard(
+                                hotel: homeProvider.hotels[index],
+                                minPrice: homeProvider.getMinPriceForHotel(
+                                  homeProvider.hotels[index],
                                 ),
-                        ),
-                        const SizedBox(height: 28),
-
-                        // ── All hotels section ──────────────────
-                        Padding(
-                          padding: const EdgeInsets.symmetric(horizontal: 24.0),
-                          child: Text(
-                            l10n?.homeAllHotelsTitle ?? 'Todos los hoteles',
-                            style: AppTextStyles.headingM,
+                              );
+                            },
                           ),
-                        ),
-                        const SizedBox(height: 16),
-                        ListView.builder(
-                          padding: const EdgeInsets.symmetric(horizontal: 24.0),
-                          physics: const NeverScrollableScrollPhysics(),
-                          shrinkWrap: true,
-                          itemCount: homeProvider.hotels.length,
-                          itemBuilder: (context, index) {
-                            return _HotelListCard(
-                              hotel: homeProvider.hotels[index],
-                              minPrice: homeProvider.getMinPriceForHotel(homeProvider.hotels[index]),
-                            );
-                          },
-                        ),
-                      ],
+                        ],
+                      ),
                     ),
                   ),
                 ),
               ),
-            ),
     );
   }
 }
@@ -158,20 +191,32 @@ class _RecommendedCard extends StatelessWidget {
             children: [
               // Image
               Positioned.fill(
-                child: hotel.coverImageUrl != null
-                    ? CachedNetworkImage(
-                        imageUrl: hotel.coverImageUrl!,
-                        fit: BoxFit.cover,
-                        placeholder: (_, __) => Container(color: AppColors.borderLight),
-                        errorWidget: (_, __, ___) => Container(
+                child:
+                    hotel.coverImageUrl != null
+                        ? CachedNetworkImage(
+                          imageUrl: hotel.coverImageUrl!,
+                          fit: BoxFit.cover,
+                          placeholder:
+                              (_, __) =>
+                                  Container(color: AppColors.borderLight),
+                          errorWidget:
+                              (_, __, ___) => Container(
+                                color: AppColors.borderLight,
+                                child: const Icon(
+                                  Icons.hotel,
+                                  size: 48,
+                                  color: AppColors.primaryBurgundyLight,
+                                ),
+                              ),
+                        )
+                        : Container(
                           color: AppColors.borderLight,
-                          child: const Icon(Icons.hotel, size: 48, color: AppColors.primaryBurgundyLight),
+                          child: const Icon(
+                            Icons.hotel,
+                            size: 48,
+                            color: AppColors.primaryBurgundyLight,
+                          ),
                         ),
-                      )
-                    : Container(
-                        color: AppColors.borderLight,
-                        child: const Icon(Icons.hotel, size: 48, color: AppColors.primaryBurgundyLight),
-                      ),
               ),
               // Gradient overlay for text
               Positioned.fill(
@@ -194,7 +239,10 @@ class _RecommendedCard extends StatelessWidget {
                 top: 12,
                 left: 12,
                 child: Container(
-                  padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                  padding: const EdgeInsets.symmetric(
+                    horizontal: 8,
+                    vertical: 4,
+                  ),
                   decoration: BoxDecoration(
                     color: Colors.white.withOpacity(0.9),
                     borderRadius: BorderRadius.circular(8),
@@ -202,9 +250,18 @@ class _RecommendedCard extends StatelessWidget {
                   child: Row(
                     mainAxisSize: MainAxisSize.min,
                     children: [
-                      const Icon(Icons.star, size: 14, color: AppColors.starRating),
+                      const Icon(
+                        Icons.star,
+                        size: 14,
+                        color: AppColors.starRating,
+                      ),
                       const SizedBox(width: 2),
-                      Text(hotel.rating.toStringAsFixed(1), style: AppTextStyles.caption.copyWith(fontWeight: FontWeight.w600)),
+                      Text(
+                        hotel.rating.toStringAsFixed(1),
+                        style: AppTextStyles.caption.copyWith(
+                          fontWeight: FontWeight.w600,
+                        ),
+                      ),
                     ],
                   ),
                 ),
@@ -219,7 +276,11 @@ class _RecommendedCard extends StatelessWidget {
                     color: Colors.white.withOpacity(0.9),
                     shape: BoxShape.circle,
                   ),
-                  child: const Icon(Icons.favorite_border, size: 18, color: AppColors.primaryBurgundy),
+                  child: const Icon(
+                    Icons.favorite_border,
+                    size: 18,
+                    color: AppColors.primaryBurgundy,
+                  ),
                 ),
               ),
               // Bottom text
@@ -243,12 +304,18 @@ class _RecommendedCard extends StatelessWidget {
                         Expanded(
                           child: Row(
                             children: [
-                              const Icon(Icons.location_on, size: 12, color: Colors.white70),
+                              const Icon(
+                                Icons.location_on,
+                                size: 12,
+                                color: Colors.white70,
+                              ),
                               const SizedBox(width: 2),
                               Expanded(
                                 child: Text(
                                   hotel.city ?? hotel.address,
-                                  style: AppTextStyles.caption.copyWith(color: Colors.white70),
+                                  style: AppTextStyles.caption.copyWith(
+                                    color: Colors.white70,
+                                  ),
                                   overflow: TextOverflow.ellipsis,
                                 ),
                               ),
@@ -257,7 +324,10 @@ class _RecommendedCard extends StatelessWidget {
                         ),
                         Text(
                           '\$${minPrice.toStringAsFixed(0)}/3 Horas',
-                          style: AppTextStyles.caption.copyWith(color: Colors.white, fontWeight: FontWeight.w700),
+                          style: AppTextStyles.caption.copyWith(
+                            color: Colors.white,
+                            fontWeight: FontWeight.w700,
+                          ),
                         ),
                       ],
                     ),
@@ -282,9 +352,10 @@ class _HotelListCard extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final amenityText = hotel.amenities?.isNotEmpty == true
-        ? hotel.amenities!.take(3).map((a) => '• ${a.name}').join('  ')
-        : '• Wifi  • AC';
+    final amenityText =
+        hotel.amenities?.isNotEmpty == true
+            ? hotel.amenities!.take(3).map((a) => '• ${a.name}').join('  ')
+            : '• Wifi  • AC';
 
     return GestureDetector(
       onTap: () => context.push('/hotel/${hotel.id}'),
@@ -292,7 +363,7 @@ class _HotelListCard extends StatelessWidget {
         margin: const EdgeInsets.only(bottom: 16.0),
         padding: const EdgeInsets.all(12.0),
         decoration: BoxDecoration(
-          color: AppColors.backgroundWhite,
+          color: AppColors.backgroundPink,
           borderRadius: BorderRadius.circular(16),
           boxShadow: [
             BoxShadow(
@@ -313,14 +384,25 @@ class _HotelListCard extends StatelessWidget {
                 borderRadius: BorderRadius.circular(12),
               ),
               clipBehavior: Clip.antiAlias,
-              child: hotel.coverImageUrl != null
-                  ? CachedNetworkImage(
-                      imageUrl: hotel.coverImageUrl!,
-                      fit: BoxFit.cover,
-                      placeholder: (_, __) => const Center(child: CircularProgressIndicator(strokeWidth: 2)),
-                      errorWidget: (_, __, ___) => const Icon(Icons.hotel, color: AppColors.primaryBurgundyLight),
-                    )
-                  : const Icon(Icons.hotel, color: AppColors.primaryBurgundyLight),
+              child:
+                  hotel.coverImageUrl != null
+                      ? CachedNetworkImage(
+                        imageUrl: hotel.coverImageUrl!,
+                        fit: BoxFit.cover,
+                        placeholder:
+                            (_, __) => const Center(
+                              child: CircularProgressIndicator(strokeWidth: 2),
+                            ),
+                        errorWidget:
+                            (_, __, ___) => const Icon(
+                              Icons.hotel,
+                              color: AppColors.primaryBurgundyLight,
+                            ),
+                      )
+                      : const Icon(
+                        Icons.hotel,
+                        color: AppColors.primaryBurgundyLight,
+                      ),
             ),
             const SizedBox(width: 16),
             Expanded(
@@ -331,13 +413,27 @@ class _HotelListCard extends StatelessWidget {
                     mainAxisAlignment: MainAxisAlignment.spaceBetween,
                     children: [
                       Expanded(
-                        child: Text(hotel.name, style: AppTextStyles.labelM, maxLines: 1, overflow: TextOverflow.ellipsis),
+                        child: Text(
+                          hotel.name,
+                          style: AppTextStyles.labelM,
+                          maxLines: 1,
+                          overflow: TextOverflow.ellipsis,
+                        ),
                       ),
                       Row(
                         children: [
-                          const Icon(Icons.star, size: 14, color: AppColors.starRating),
+                          const Icon(
+                            Icons.star,
+                            size: 14,
+                            color: AppColors.starRating,
+                          ),
                           const SizedBox(width: 2),
-                          Text(hotel.rating.toStringAsFixed(1), style: AppTextStyles.caption.copyWith(fontWeight: FontWeight.w600)),
+                          Text(
+                            hotel.rating.toStringAsFixed(1),
+                            style: AppTextStyles.caption.copyWith(
+                              fontWeight: FontWeight.w600,
+                            ),
+                          ),
                         ],
                       ),
                     ],
@@ -345,19 +441,27 @@ class _HotelListCard extends StatelessWidget {
                   const SizedBox(height: 4),
                   Text(
                     amenityText,
-                    style: AppTextStyles.bodyS.copyWith(color: AppColors.textSecondary),
+                    style: AppTextStyles.bodyS.copyWith(
+                      color: AppColors.textSecondary,
+                    ),
                     maxLines: 1,
                     overflow: TextOverflow.ellipsis,
                   ),
                   const SizedBox(height: 4),
                   Row(
                     children: [
-                      const Icon(Icons.location_on, size: 12, color: AppColors.textSecondary),
+                      const Icon(
+                        Icons.location_on,
+                        size: 12,
+                        color: AppColors.textSecondary,
+                      ),
                       const SizedBox(width: 2),
                       Expanded(
                         child: Text(
                           hotel.city ?? hotel.address,
-                          style: AppTextStyles.caption.copyWith(color: AppColors.textSecondary),
+                          style: AppTextStyles.caption.copyWith(
+                            color: AppColors.textSecondary,
+                          ),
                           overflow: TextOverflow.ellipsis,
                         ),
                       ),
@@ -368,7 +472,9 @@ class _HotelListCard extends StatelessWidget {
                     alignment: Alignment.centerRight,
                     child: Text(
                       '\$${minPrice.toStringAsFixed(0)}/3 Horas',
-                      style: AppTextStyles.labelM.copyWith(color: AppColors.primaryBurgundy),
+                      style: AppTextStyles.labelM.copyWith(
+                        color: AppColors.primaryBurgundy,
+                      ),
                     ),
                   ),
                 ],

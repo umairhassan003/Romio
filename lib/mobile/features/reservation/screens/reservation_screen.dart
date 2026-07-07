@@ -5,6 +5,7 @@ import '../../../../core/theme/app_text_styles.dart';
 import 'package:go_router/go_router.dart';
 import 'package:flutter_gen/gen_l10n/app_localizations.dart';
 import '../providers/reservation_flow_provider.dart';
+import '../../profile/providers/profile_provider.dart';
 
 class ReservationScreen extends StatelessWidget {
   final String roomId;
@@ -18,7 +19,7 @@ class ReservationScreen extends StatelessWidget {
     final times = ['14:00', '15:00', '16:00', '17:00', '18:00', '19:00', '20:00', '21:00', '22:00'];
 
     return Scaffold(
-      backgroundColor: AppColors.backgroundPink,
+      backgroundColor: AppColors.backgroundWhite,
       appBar: AppBar(
         title: Text(l10n?.reservationTitle ?? 'Reserva', style: AppTextStyles.headingM),
         backgroundColor: Colors.transparent, elevation: 0,
@@ -31,7 +32,7 @@ class ReservationScreen extends StatelessWidget {
           Text(l10n?.reservationSelectDate ?? 'Seleccionar fecha', style: AppTextStyles.headingM),
           const SizedBox(height: 16),
           Container(
-            decoration: BoxDecoration(color: AppColors.backgroundWhite, borderRadius: BorderRadius.circular(16)),
+            decoration: BoxDecoration(color: AppColors.backgroundPink, borderRadius: BorderRadius.circular(16)),
             child: CalendarDatePicker(
               initialDate: provider.selectedDate.isBefore(DateTime.now()) ? DateTime.now() : provider.selectedDate,
               firstDate: DateTime.now(),
@@ -57,7 +58,7 @@ class ReservationScreen extends StatelessWidget {
                 child: Container(
                   alignment: Alignment.center,
                   decoration: BoxDecoration(
-                    color: sel ? AppColors.primaryBurgundy : AppColors.backgroundWhite,
+                    color: sel ? AppColors.primaryBurgundy : AppColors.backgroundPink,
                     borderRadius: BorderRadius.circular(12),
                     border: Border.all(color: sel ? AppColors.primaryBurgundy : AppColors.borderLight),
                   ),
@@ -87,7 +88,7 @@ class ReservationScreen extends StatelessWidget {
           // Summary card
           Container(
             padding: const EdgeInsets.all(16),
-            decoration: BoxDecoration(color: AppColors.backgroundWhite, borderRadius: BorderRadius.circular(16)),
+            decoration: BoxDecoration(color: AppColors.backgroundPink, borderRadius: BorderRadius.circular(16)),
             child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
               Row(mainAxisAlignment: MainAxisAlignment.spaceBetween, children: [
                 Text('1 ${l10n?.reservationRoom ?? 'Habitación'}', style: AppTextStyles.labelM),
@@ -100,6 +101,16 @@ class ReservationScreen extends StatelessWidget {
                 Expanded(child: Text(l10n?.reservationCancelNote ?? 'Recuerda que puedes cancelar hasta 24h antes del check in sin compromiso',
                   style: AppTextStyles.caption.copyWith(color: AppColors.textSecondary))),
               ]),
+              if (provider.payOnProperty) ...[
+                const SizedBox(height: 8),
+                Row(children: [
+                  const Icon(Icons.store_mall_directory_outlined, size: 14, color: AppColors.success),
+                  const SizedBox(width: 6),
+                  Expanded(child: Text(
+                    l10n?.reservationPayOnPropertyNote ?? 'Este hotel permite pagar en la propiedad. No se requiere pago por adelantado.',
+                    style: AppTextStyles.caption.copyWith(color: AppColors.success))),
+                ]),
+              ],
             ]),
           ),
           const SizedBox(height: 100),
@@ -110,28 +121,90 @@ class ReservationScreen extends StatelessWidget {
         decoration: const BoxDecoration(color: AppColors.backgroundWhite,
           boxShadow: [BoxShadow(color: Colors.black12, blurRadius: 10, offset: Offset(0, -2))]),
         child: SafeArea(
-          child: SizedBox(
-            width: double.infinity, height: 52,
-            child: ElevatedButton(
-              onPressed: () => context.push('/payment'),
-              style: ElevatedButton.styleFrom(
-                backgroundColor: AppColors.primaryBurgundy,
-                shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(28)),
-              ),
-              child: Text(l10n?.reservationContinuePayment ?? 'Continuar con el pago',
-                style: AppTextStyles.labelM.copyWith(color: AppColors.textOnPrimary)),
-            ),
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              if (provider.payOnProperty) ...[
+                SizedBox(
+                  width: double.infinity, height: 52,
+                  child: ElevatedButton(
+                    onPressed: provider.isLoading ? null : () => context.push('/payment'),
+                    style: ElevatedButton.styleFrom(
+                      backgroundColor: AppColors.primaryBurgundy,
+                      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(28)),
+                    ),
+                    child: Text(
+                      l10n?.payOnlineOption ?? 'Pagar en línea',
+                      style: AppTextStyles.labelM.copyWith(color: AppColors.textOnPrimary),
+                    ),
+                  ),
+                ),
+                const SizedBox(height: 12),
+                SizedBox(
+                  width: double.infinity, height: 52,
+                  child: OutlinedButton(
+                    onPressed: provider.isLoading ? null : () => _reserveOnProperty(context),
+                    style: OutlinedButton.styleFrom(
+                      foregroundColor: AppColors.primaryBurgundy,
+                      side: const BorderSide(color: AppColors.primaryBurgundy, width: 2),
+                      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(28)),
+                    ),
+                    child: provider.isLoading
+                        ? const SizedBox(width: 24, height: 24, child: CircularProgressIndicator(strokeWidth: 2, color: AppColors.primaryBurgundy))
+                        : Text(
+                            l10n?.payOnPropertyOption ?? 'Pagar en la propiedad',
+                            style: AppTextStyles.labelM.copyWith(color: AppColors.primaryBurgundy),
+                          ),
+                  ),
+                ),
+              ] else ...[
+                SizedBox(
+                  width: double.infinity, height: 52,
+                  child: ElevatedButton(
+                    onPressed: provider.isLoading ? null : () => context.push('/payment'),
+                    style: ElevatedButton.styleFrom(
+                      backgroundColor: AppColors.primaryBurgundy,
+                      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(28)),
+                    ),
+                    child: provider.isLoading
+                        ? const SizedBox(width: 24, height: 24, child: CircularProgressIndicator(strokeWidth: 2, color: Colors.white))
+                        : Text(
+                            l10n?.reservationContinuePayment ?? 'Continuar con el pago',
+                            style: AppTextStyles.labelM.copyWith(color: AppColors.textOnPrimary),
+                          ),
+                  ),
+                ),
+              ],
+            ],
           ),
         ),
       ),
     );
   }
 
+  Future<void> _reserveOnProperty(BuildContext context) async {
+    final l10n = AppLocalizations.of(context);
+    final provider = context.read<ReservationFlowProvider>();
+    final profileId = context.read<ProfileProvider>().profile?.id;
+    if (profileId == null) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text(l10n?.paymentProfileError ?? 'Error: perfil no cargado')));
+      return;
+    }
+    final success = await provider.reserveOnProperty(profileId);
+    if (success && context.mounted) {
+      context.go('/confirmation');
+    } else if (context.mounted) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text(provider.error ?? (l10n?.paymentGenericError ?? 'Error al confirmar'))));
+    }
+  }
+
   Widget _circleButton(IconData icon, VoidCallback? onTap) => GestureDetector(
     onTap: onTap,
     child: Container(
       width: 40, height: 40,
-      decoration: BoxDecoration(shape: BoxShape.circle, color: onTap != null ? AppColors.primaryBurgundy : AppColors.borderLight),
+      decoration: BoxDecoration(shape: BoxShape.circle, color: onTap != null ? AppColors.primaryBurgundy : AppColors.backgroundPink),
       child: Icon(icon, color: onTap != null ? AppColors.textOnPrimary : AppColors.textSecondary, size: 24),
     ),
   );

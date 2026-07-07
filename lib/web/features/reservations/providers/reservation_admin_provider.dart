@@ -28,7 +28,7 @@ class ReservationAdminProvider extends ChangeNotifier {
       final client = Supabase.instance.client;
       var query = client
           .from('reservations')
-          .select('*, rooms(name, hotels(name)), profiles(first_name, last_name)');
+          .select('*, rooms(name, hotels(name, address)), payments(*), profiles(first_name, last_name)');
 
       if (filterStatus != null) query = query.eq('status', filterStatus!);
       if (filterStartDate != null) {

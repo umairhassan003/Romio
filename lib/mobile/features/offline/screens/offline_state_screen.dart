@@ -11,7 +11,7 @@ class OfflineStateScreen extends StatelessWidget {
     final l10n = AppLocalizations.of(context);
 
     return Scaffold(
-      backgroundColor: AppColors.backgroundPink,
+      backgroundColor: AppColors.backgroundWhite,
       body: Center(
         child: Padding(
           padding: const EdgeInsets.all(32.0),

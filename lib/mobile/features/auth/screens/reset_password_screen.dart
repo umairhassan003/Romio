@@ -9,7 +9,7 @@ class ResetPasswordScreen extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: AppColors.backgroundPink,
+      backgroundColor: AppColors.backgroundWhite,
       appBar: AppBar(
         title: const Text('Nueva contraseña', style: AppTextStyles.headingM),
         backgroundColor: Colors.transparent,

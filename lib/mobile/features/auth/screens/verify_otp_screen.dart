@@ -9,7 +9,7 @@ class VerifyOtpScreen extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: AppColors.backgroundPink,
+      backgroundColor: AppColors.backgroundWhite,
       appBar: AppBar(
         title: const Text('Código de verificación', style: AppTextStyles.headingM),
         backgroundColor: Colors.transparent,

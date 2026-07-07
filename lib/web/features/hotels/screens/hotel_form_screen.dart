@@ -36,6 +36,7 @@ class _HotelFormScreenState extends State<HotelFormScreen> {
 
   String? _coverUrl;
   bool _isActive = true;
+  bool _payOnProperty = false;
   bool _isEdit = false;
   Hotel? _existingHotel;
   List<Amenity> _selectedAmenities = [];
@@ -65,6 +66,7 @@ class _HotelFormScreenState extends State<HotelFormScreen> {
           _lngCtrl.text = hotel.longitude?.toString() ?? '';
           _coverUrl = hotel.coverImageUrl;
           _isActive = hotel.isActive;
+          _payOnProperty = hotel.payOnProperty;
           _selectedAmenities = hotel.amenities ?? [];
           _galleryImages = hotel.images ?? [];
           setState(() {});
@@ -165,6 +167,7 @@ class _HotelFormScreenState extends State<HotelFormScreen> {
       longitude: double.tryParse(_lngCtrl.text),
       coverImageUrl: _coverUrl,
       isActive: _isActive,
+      payOnProperty: _payOnProperty,
       rating: _existingHotel?.rating ?? 0.0,
       createdAt: _existingHotel?.createdAt ?? DateTime.now(),
       updatedAt: DateTime.now(),
@@ -542,6 +545,15 @@ class _HotelFormScreenState extends State<HotelFormScreen> {
                           onChanged: (v) => setState(() => _isActive = v),
                           title: Text(l.hotelFormActiveSwitch),
                           subtitle: Text(l.hotelFormActiveSubtitle),
+                          contentPadding: EdgeInsets.zero,
+                          activeColor: AppColors.primaryBurgundy,
+                        ),
+
+                        SwitchListTile(
+                          value: _payOnProperty,
+                          onChanged: (v) => setState(() => _payOnProperty = v),
+                          title: Text(l.hotelFormPayOnPropertySwitch),
+                          subtitle: Text(l.hotelFormPayOnPropertySubtitle),
                           contentPadding: EdgeInsets.zero,
                           activeColor: AppColors.primaryBurgundy,
                         ),

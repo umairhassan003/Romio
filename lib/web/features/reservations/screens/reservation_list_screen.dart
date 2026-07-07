@@ -6,6 +6,7 @@ import '../../../../core/theme/app_colors.dart';
 import '../../../core/widgets/romio_data_table.dart';
 import '../../../core/widgets/status_badge.dart';
 import '../../../core/widgets/error_banner.dart';
+import '../../../../domain/models/reservation.dart';
 import '../providers/reservation_admin_provider.dart';
 
 class ReservationListScreen extends StatefulWidget {
@@ -22,6 +23,16 @@ class _ReservationListScreenState extends State<ReservationListScreen> {
     WidgetsBinding.instance.addPostFrameCallback((_) {
       context.read<ReservationAdminProvider>().loadReservations();
     });
+  }
+
+  String _getPaymentBadgeStatus(Reservation r) {
+    if (r.paymentProvider == 'pay_on_property') {
+      return 'pay_at_property';
+    } else if (r.paymentStatus == 'completed') {
+      return 'paid';
+    } else {
+      return 'payment_pending';
+    }
   }
 
   @override
@@ -58,6 +69,7 @@ class _ReservationListScreenState extends State<ReservationListScreen> {
               DataColumn(label: Text(l.reservationColCheckIn)),
               DataColumn(label: Text(l.reservationColHours)),
               DataColumn(label: Text(l.reservationColTotal)),
+              DataColumn(label: Text(l.reservationColPayment)),
               DataColumn(label: Text(l.reservationColStatus)),
               DataColumn(label: Text(l.reservationColActions)),
             ],
@@ -70,6 +82,7 @@ class _ReservationListScreenState extends State<ReservationListScreen> {
               DataCell(Text(r.checkInTime)),
               DataCell(Text('${r.durationHours}h')),
               DataCell(Text('\$${r.totalPrice.toStringAsFixed(2)}')),
+              DataCell(StatusBadge(status: _getPaymentBadgeStatus(r))),
               DataCell(StatusBadge(status: r.status)),
               DataCell(Row(mainAxisSize: MainAxisSize.min, children: [
                 IconButton(icon: const Icon(Icons.visibility, size: 18), onPressed: () => context.go('/admin/reservations/${r.id}'), tooltip: l.reservationViewDetail),

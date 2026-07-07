@@ -15,6 +15,8 @@ import 'data/repositories/supabase_hotel_repository.dart';
 import 'data/repositories/supabase_room_repository.dart';
 import 'data/repositories/supabase_reservation_repository.dart';
 import 'data/repositories/supabase_payment_repository.dart';
+import 'data/gateways/paypal_payment_gateway.dart';
+import 'domain/gateways/payment_gateway.dart';
 
 // Feature Providers
 import 'mobile/features/auth/providers/auth_provider.dart';
@@ -68,6 +70,9 @@ class MyApp extends StatelessWidget {
         Provider(create: (_) => SupabaseReservationRepository()),
         Provider(create: (_) => SupabasePaymentRepository()),
 
+        // Payment gateway (PayPal — handles PayPal account + card payments)
+        Provider<PaymentGateway>(create: (_) => PayPalPaymentGateway()),
+
         // Locale Provider (language switching)
         ChangeNotifierProvider(create: (_) => LocaleProvider()),
 
@@ -99,6 +104,7 @@ class MyApp extends StatelessWidget {
           create: (context) => ReservationFlowProvider(
             reservationRepository: context.read<SupabaseReservationRepository>(),
             paymentRepository: context.read<SupabasePaymentRepository>(),
+            paymentGateway: context.read<PaymentGateway>(),
           ),
         ),
       ],

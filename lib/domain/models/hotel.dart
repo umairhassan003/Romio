@@ -13,6 +13,10 @@ class Hotel {
   final double rating;
   final String? coverImageUrl;
   final bool isActive;
+
+  /// When true, guests may reserve a room at this hotel without paying
+  /// upfront — they settle at the property on arrival.
+  final bool payOnProperty;
   final DateTime createdAt;
   final DateTime updatedAt;
   
@@ -32,6 +36,7 @@ class Hotel {
     this.rating = 0.0,
     this.coverImageUrl,
     this.isActive = true,
+    this.payOnProperty = false,
     required this.createdAt,
     required this.updatedAt,
     this.images,
@@ -51,6 +56,7 @@ class Hotel {
       rating: json['rating'] != null ? (json['rating'] as num).toDouble() : 0.0,
       coverImageUrl: json['cover_image_url'] as String?,
       isActive: json['is_active'] as bool? ?? true,
+      payOnProperty: json['pay_on_property'] as bool? ?? false,
       createdAt: DateTime.parse(json['created_at']),
       updatedAt: DateTime.parse(json['updated_at']),
       images: json['hotel_images'] != null 
@@ -77,6 +83,7 @@ class Hotel {
       'rating': rating,
       if (coverImageUrl != null) 'cover_image_url': coverImageUrl,
       'is_active': isActive,
+      'pay_on_property': payOnProperty,
       'created_at': createdAt.toIso8601String(),
       'updated_at': updatedAt.toIso8601String(),
     };
@@ -93,6 +100,7 @@ class Hotel {
     double? rating,
     String? coverImageUrl,
     bool? isActive,
+    bool? payOnProperty,
     DateTime? createdAt,
     DateTime? updatedAt,
     List<HotelImage>? images,
@@ -110,6 +118,7 @@ class Hotel {
       rating: rating ?? this.rating,
       coverImageUrl: coverImageUrl ?? this.coverImageUrl,
       isActive: isActive ?? this.isActive,
+      payOnProperty: payOnProperty ?? this.payOnProperty,
       createdAt: createdAt ?? this.createdAt,
       updatedAt: updatedAt ?? this.updatedAt,
       images: images ?? this.images,

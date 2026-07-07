@@ -182,6 +182,10 @@ class _HotelDetailScreenState extends State<HotelDetailScreen> {
                   _InfoRow(label: l.hotelDetailCity, value: hotel.city ?? '—'),
                   _InfoRow(label: l.hotelDetailLatitude, value: hotel.latitude?.toString() ?? '—'),
                   _InfoRow(label: l.hotelDetailLongitude, value: hotel.longitude?.toString() ?? '—'),
+                  _InfoRow(
+                    label: l.hotelDetailPayOnProperty,
+                    value: hotel.payOnProperty ? l.adminEnabled : l.adminDisabled,
+                  ),
                   if (hotel.description != null && hotel.description!.isNotEmpty) ...[
                     const Divider(),
                     SectionHeader(title: l.hotelDetailDescription),
