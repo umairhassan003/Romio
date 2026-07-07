@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import 'package:go_router/go_router.dart';
+import 'package:flutter_svg/flutter_svg.dart';
 import 'package:flutter_gen/gen_l10n/app_localizations.dart';
 import '../../../../core/theme/app_colors.dart';
 import '../providers/admin_auth_provider.dart';
@@ -59,14 +60,10 @@ class _LoginCardState extends State<LoginCard> {
         child: Column(
           mainAxisSize: MainAxisSize.min,
           children: [
-            const Text(
-              'ROMIO',
-              style: TextStyle(
-                fontSize: 32,
-                fontWeight: FontWeight.bold,
-                color: AppColors.primaryBurgundy,
-                letterSpacing: 4,
-              ),
+            SvgPicture.asset(
+              'images/RomioLogo.svg',
+              height: 40,
+              colorFilter: const ColorFilter.mode(AppColors.primaryBurgundy, BlendMode.srcIn),
             ),
             const SizedBox(height: 8),
             Text(
