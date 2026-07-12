@@ -17,9 +17,15 @@ class Hotel {
   /// When true, guests may reserve a room at this hotel without paying
   /// upfront — they settle at the property on arrival.
   final bool payOnProperty;
+
+  /// Earliest time guests can check in, stored as "HH:MM" (24-hour).
+  /// When set, the reservation screen only shows time slots at or after
+  /// this time.
+  final String? checkInTime;
+
   final DateTime createdAt;
   final DateTime updatedAt;
-  
+
   // Relations
   final List<HotelImage>? images;
   final List<Amenity>? amenities;
@@ -37,6 +43,7 @@ class Hotel {
     this.coverImageUrl,
     this.isActive = true,
     this.payOnProperty = false,
+    this.checkInTime,
     required this.createdAt,
     required this.updatedAt,
     this.images,
@@ -57,9 +64,10 @@ class Hotel {
       coverImageUrl: json['cover_image_url'] as String?,
       isActive: json['is_active'] as bool? ?? true,
       payOnProperty: json['pay_on_property'] as bool? ?? false,
+      checkInTime: json['check_in_time'] as String?,
       createdAt: DateTime.parse(json['created_at']),
       updatedAt: DateTime.parse(json['updated_at']),
-      images: json['hotel_images'] != null 
+      images: json['hotel_images'] != null
           ? (json['hotel_images'] as List).map((i) => HotelImage.fromJson(i)).toList()
           : null,
       amenities: json['hotel_amenities'] != null
@@ -84,6 +92,7 @@ class Hotel {
       if (coverImageUrl != null) 'cover_image_url': coverImageUrl,
       'is_active': isActive,
       'pay_on_property': payOnProperty,
+      'check_in_time': checkInTime,
       'created_at': createdAt.toIso8601String(),
       'updated_at': updatedAt.toIso8601String(),
     };
@@ -101,6 +110,7 @@ class Hotel {
     String? coverImageUrl,
     bool? isActive,
     bool? payOnProperty,
+    String? checkInTime,
     DateTime? createdAt,
     DateTime? updatedAt,
     List<HotelImage>? images,
@@ -119,6 +129,7 @@ class Hotel {
       coverImageUrl: coverImageUrl ?? this.coverImageUrl,
       isActive: isActive ?? this.isActive,
       payOnProperty: payOnProperty ?? this.payOnProperty,
+      checkInTime: checkInTime ?? this.checkInTime,
       createdAt: createdAt ?? this.createdAt,
       updatedAt: updatedAt ?? this.updatedAt,
       images: images ?? this.images,

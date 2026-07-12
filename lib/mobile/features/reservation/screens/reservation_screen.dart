@@ -16,7 +16,7 @@ class ReservationScreen extends StatelessWidget {
     final l10n = AppLocalizations.of(context);
     final provider = context.watch<ReservationFlowProvider>();
 
-    final times = ['14:00', '15:00', '16:00', '17:00', '18:00', '19:00', '20:00', '21:00', '22:00'];
+    final times = provider.availableTimes;
 
     return Scaffold(
       backgroundColor: AppColors.backgroundWhite,
@@ -73,16 +73,26 @@ class ReservationScreen extends StatelessWidget {
           ),
           const SizedBox(height: 32),
 
-          // Duration slots (3h / 6h / 24h)
+          // Duration slots — only show slots configured by the hotel admin
           Text(l10n?.reservationDurationLabel ?? 'Duración', style: AppTextStyles.headingM),
           const SizedBox(height: 16),
-          Row(children: [
-            Expanded(child: _slotCard(context, provider, 3)),
-            const SizedBox(width: 12),
-            Expanded(child: _slotCard(context, provider, 6)),
-            const SizedBox(width: 12),
-            Expanded(child: _slotCard(context, provider, 24)),
-          ]),
+          Builder(builder: (ctx) {
+            final slots = provider.availableSlots;
+            if (slots.isEmpty) {
+              return Text(
+                'No hay opciones de reserva disponibles.',
+                style: AppTextStyles.bodyM.copyWith(color: AppColors.textSecondary),
+              );
+            }
+            return Row(
+              children: [
+                for (int i = 0; i < slots.length; i++) ...[
+                  if (i > 0) const SizedBox(width: 12),
+                  Expanded(child: _slotCard(ctx, provider, slots[i])),
+                ],
+              ],
+            );
+          }),
           const SizedBox(height: 32),
 
           // Summary card

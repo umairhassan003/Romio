@@ -12,21 +12,23 @@ class ReservationFlowProvider extends ChangeNotifier {
   final PaymentRepository _paymentRepository;
   final PaymentGateway _paymentGateway;
 
-  /// Bookable duration slots, in hours.
-  static const List<int> slots = [3, 6, 24];
+  static const List<String> _allTimes = [
+    '14:00', '15:00', '16:00', '17:00', '18:00',
+    '19:00', '20:00', '21:00', '22:00',
+  ];
 
   // Flow state
   String? _selectedRoomId;
   String? _roomName;
   String? _hotelName;
-  double _price3h = 0;
-  double _price6h = 0;
-  double _price24h = 0;
+  double? _price3h;
+  double? _price6h;
+  double? _price24h;
   bool _payOnProperty = false;
+  String? _checkInTime;
   DateTime _selectedDate = DateTime.now();
   String _selectedTime = '14:00';
   int _duration = 3;
-  // 'card' (credit/debit via PayPal) or 'paypal'.
   String _selectedPaymentMethod = PaymentMethodType.card.providerKey;
 
   // Results
@@ -46,8 +48,6 @@ class ReservationFlowProvider extends ChangeNotifier {
   String? get selectedRoomId => _selectedRoomId;
   String? get roomName => _roomName;
   String? get hotelName => _hotelName;
-
-  /// Whether the selected room's hotel allows reserving without upfront payment.
   bool get payOnProperty => _payOnProperty;
   DateTime get selectedDate => _selectedDate;
   String get selectedTime => _selectedTime;
@@ -57,17 +57,28 @@ class ReservationFlowProvider extends ChangeNotifier {
   bool get isLoading => _isLoading;
   String? get error => _error;
 
-  /// Price for a given booking slot (3h / 6h / 24h).
+  /// Slots (in hours) that have a configured price — only these are shown in the UI.
+  List<int> get availableSlots {
+    final result = <int>[];
+    if (_price3h != null) result.add(3);
+    if (_price6h != null) result.add(6);
+    if (_price24h != null) result.add(24);
+    return result;
+  }
+
+  /// Times the guest can select, filtered by the hotel's check-in start time.
+  List<String> get availableTimes {
+    if (_checkInTime == null) return _allTimes;
+    return _allTimes.where((t) => t.compareTo(_checkInTime!) >= 0).toList();
+  }
+
+  /// Price for a given booking slot (3h / 6h / 24h). Returns 0 for unconfigured slots.
   double priceForSlot(int hours) {
     switch (hours) {
-      case 3:
-        return _price3h;
-      case 6:
-        return _price6h;
-      case 24:
-        return _price24h;
-      default:
-        return _price3h;
+      case 3:  return _price3h ?? 0;
+      case 6:  return _price6h ?? 0;
+      case 24: return _price24h ?? 0;
+      default: return _price3h ?? 0;
     }
   }
 
@@ -75,7 +86,6 @@ class ReservationFlowProvider extends ChangeNotifier {
 
   String get checkOutTime {
     final parts = _selectedTime.split(':');
-    // Wrap around midnight (e.g. a 24h slot ends at the same clock time).
     final hour = (int.parse(parts[0]) + _duration) % 24;
     return '${hour.toString().padLeft(2, '0')}:${parts[1]}';
   }
@@ -85,10 +95,11 @@ class ReservationFlowProvider extends ChangeNotifier {
     required String roomId,
     required String roomName,
     required String hotelName,
-    required double price3h,
-    required double price6h,
-    required double price24h,
+    double? price3h,
+    double? price6h,
+    double? price24h,
     bool payOnProperty = false,
+    String? checkInTime,
   }) {
     _selectedRoomId = roomId;
     _roomName = roomName;
@@ -96,8 +107,14 @@ class ReservationFlowProvider extends ChangeNotifier {
     _price3h = price3h;
     _price6h = price6h;
     _price24h = price24h;
-    _duration = 3;
     _payOnProperty = payOnProperty;
+    _checkInTime = checkInTime;
+    // Default to first available slot
+    final slots = availableSlots;
+    _duration = slots.isNotEmpty ? slots.first : 3;
+    // Default to first available check-in time
+    final times = availableTimes;
+    _selectedTime = times.isNotEmpty ? times.first : '14:00';
     _confirmedReservation = null;
     _error = null;
     notifyListeners();
@@ -113,9 +130,9 @@ class ReservationFlowProvider extends ChangeNotifier {
     notifyListeners();
   }
 
-  /// Select one of the fixed booking slots (3h / 6h / 24h).
+  /// Select one of the available booking slots.
   void selectSlot(int hours) {
-    if (slots.contains(hours)) {
+    if (availableSlots.contains(hours)) {
       _duration = hours;
       notifyListeners();
     }
@@ -126,19 +143,12 @@ class ReservationFlowProvider extends ChangeNotifier {
     notifyListeners();
   }
 
-  /// Generate a reservation code like RM-XXXX
   String _generateCode() {
     final rng = Random();
     final num = rng.nextInt(9000) + 1000;
     return 'RM-$num';
   }
 
-  /// Charges the guest via the payment gateway, then persists the reservation
-  /// and a matching payment record. Charging happens *before* the reservation
-  /// is written, so a declined/failed payment never leaves an orphan booking.
-  ///
-  /// [card] is required when the selected method is 'card'. [onApprovalRequired]
-  /// is supplied by the UI to handle the PayPal-wallet approval round-trip.
   Future<bool> confirmAndPay(
     String profileId, {
     CardDetails? card,
@@ -154,7 +164,6 @@ class ReservationFlowProvider extends ChangeNotifier {
       final code = _generateCode();
       final method = PaymentMethodType.fromKey(_selectedPaymentMethod);
 
-      // 1. Attempt the charge first.
       final result = await _paymentGateway.charge(
         PaymentChargeRequest(
           amount: totalPrice,
@@ -171,7 +180,6 @@ class ReservationFlowProvider extends ChangeNotifier {
         return false;
       }
 
-      // 2. Persist the booking + payment now that the charge succeeded.
       await _persistBooking(
         profileId: profileId,
         code: code,
@@ -192,9 +200,6 @@ class ReservationFlowProvider extends ChangeNotifier {
     }
   }
 
-  /// Creates the reservation without taking payment upfront. Only valid when
-  /// the room's hotel has "Pay on Property" enabled. The payment row is
-  /// recorded as pending, to be collected at the property.
   Future<bool> reserveOnProperty(String profileId) async {
     if (_selectedRoomId == null) return false;
 
@@ -249,8 +254,7 @@ class ReservationFlowProvider extends ChangeNotifier {
       hotelName: _hotelName,
     );
 
-    final createdRes =
-        await _reservationRepository.createReservation(reservation);
+    final createdRes = await _reservationRepository.createReservation(reservation);
 
     final payment = Payment(
       id: '',
@@ -272,15 +276,15 @@ class ReservationFlowProvider extends ChangeNotifier {
     );
   }
 
-  /// Resets the flow for a new reservation.
   void resetFlow() {
     _selectedRoomId = null;
     _roomName = null;
     _hotelName = null;
-    _price3h = 0;
-    _price6h = 0;
-    _price24h = 0;
+    _price3h = null;
+    _price6h = null;
+    _price24h = null;
     _payOnProperty = false;
+    _checkInTime = null;
     _selectedDate = DateTime.now();
     _selectedTime = '14:00';
     _duration = 3;

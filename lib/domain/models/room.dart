@@ -8,12 +8,11 @@ class Room {
   final String? description;
   final double pricePerHour;
 
-  /// Per-slot prices. When the DB value is null (e.g. rooms created before
-  /// slot pricing existed), these fall back to [pricePerHour] × hours so the
-  /// UI always has a sensible auto-calculated value to show.
-  final double price3h;
-  final double price6h;
-  final double price24h;
+  /// Per-slot prices. Null means the hotel admin did not configure that slot,
+  /// so the mobile app will not show it as a booking option.
+  final double? price3h;
+  final double? price6h;
+  final double? price24h;
   final double rating;
   final String? coverImageUrl;
   final String status;
@@ -30,9 +29,9 @@ class Room {
     required this.name,
     this.description,
     required this.pricePerHour,
-    required this.price3h,
-    required this.price6h,
-    required this.price24h,
+    this.price3h,
+    this.price6h,
+    this.price24h,
     this.rating = 0.0,
     this.coverImageUrl,
     this.status = 'available',
@@ -42,16 +41,24 @@ class Room {
     this.amenities,
   });
 
-  /// Price for one of the bookable slots (3h / 6h / 24h). Falls back to the
-  /// hourly rate for any other duration.
+  /// Label for the cheapest configured slot, e.g. "$50/3h".
+  String get lowestSlotLabel {
+    if (price3h != null) return '\$${price3h!.toStringAsFixed(0)}/3h';
+    if (price6h != null) return '\$${price6h!.toStringAsFixed(0)}/6h';
+    if (price24h != null) return '\$${price24h!.toStringAsFixed(0)}/24h';
+    return 'N/A';
+  }
+
+  /// Price for one of the bookable slots (3h / 6h / 24h). Returns 0 when
+  /// the slot is not configured.
   double priceForHours(int hours) {
     switch (hours) {
       case 3:
-        return price3h;
+        return price3h ?? 0;
       case 6:
-        return price6h;
+        return price6h ?? 0;
       case 24:
-        return price24h;
+        return price24h ?? 0;
       default:
         return pricePerHour * hours;
     }
@@ -59,23 +66,26 @@ class Room {
 
   factory Room.fromJson(Map<String, dynamic> json) {
     final pph = json['price_per_hour'] != null ? (json['price_per_hour'] as num).toDouble() : 0.0;
-    double slot(String key, int hours) =>
-        json[key] != null ? (json[key] as num).toDouble() : pph * hours;
+    double? slot(String key) {
+      if (json[key] == null) return null;
+      final v = (json[key] as num).toDouble();
+      return v > 0 ? v : null;
+    }
     return Room(
       id: json['id'] as String,
       hotelId: json['hotel_id'] as String,
       name: json['name'] as String,
       description: json['description'] as String?,
       pricePerHour: pph,
-      price3h: slot('price_3h', 3),
-      price6h: slot('price_6h', 6),
-      price24h: slot('price_24h', 24),
+      price3h: slot('price_3h'),
+      price6h: slot('price_6h'),
+      price24h: slot('price_24h'),
       rating: json['rating'] != null ? (json['rating'] as num).toDouble() : 0.0,
       coverImageUrl: json['cover_image_url'] as String?,
       status: json['status'] as String? ?? 'available',
       createdAt: DateTime.parse(json['created_at']),
       updatedAt: DateTime.parse(json['updated_at']),
-      images: json['room_images'] != null 
+      images: json['room_images'] != null
           ? (json['room_images'] as List).map((i) => RoomImage.fromJson(i)).toList()
           : null,
       amenities: json['room_amenities'] != null

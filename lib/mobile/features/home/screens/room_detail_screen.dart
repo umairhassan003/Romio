@@ -95,7 +95,11 @@ class _RoomDetailScreenState extends State<RoomDetailScreen> {
             backgroundColor: AppColors.backgroundWhite,
             leading: _circleBtn(Icons.arrow_back, () => Navigator.pop(context)),
             flexibleSpace: FlexibleSpaceBar(
-              background: ImageCarousel(imageUrls: _imageUrls(room), placeholderIcon: Icons.bed),
+              background: ImageCarousel(
+                imageUrls: _imageUrls(room),
+                placeholderIcon: Icons.bed,
+                caption: room.name,
+              ),
             ),
           ),
           SliverToBoxAdapter(
@@ -111,7 +115,7 @@ class _RoomDetailScreenState extends State<RoomDetailScreen> {
                 Text(room.description ?? hotel?.description ?? 'Sin descripción.',
                   style: AppTextStyles.bodyM.copyWith(height: 1.5), textAlign: TextAlign.justify),
                 const SizedBox(height: 24),
-                Text(l10n?.hotelDetailAmenitiesTitle ?? 'Lo que ofrecemos', style: AppTextStyles.headingM),
+                Text(l10n?.roomDetailAmenitiesTitle ?? 'Servicios en la habitación', style: AppTextStyles.headingM),
                 const SizedBox(height: 16),
                 AmenitiesGrid(
                   items: _amenityItems(amenities),
@@ -133,7 +137,7 @@ class _RoomDetailScreenState extends State<RoomDetailScreen> {
           child: Row(mainAxisAlignment: MainAxisAlignment.spaceBetween, children: [
             Column(mainAxisSize: MainAxisSize.min, crossAxisAlignment: CrossAxisAlignment.start, children: [
               Text(l10n?.roomPriceLabel ?? 'Precio', style: AppTextStyles.bodyS.copyWith(color: AppColors.textSecondary)),
-              Text('\$${room.price3h.toStringAsFixed(0)}/3h', style: AppTextStyles.price),
+              Text(room.lowestSlotLabel, style: AppTextStyles.price),
             ]),
             ElevatedButton(
               onPressed: () {
@@ -144,6 +148,7 @@ class _RoomDetailScreenState extends State<RoomDetailScreen> {
                   price6h: room.price6h,
                   price24h: room.price24h,
                   payOnProperty: hotel?.payOnProperty ?? false,
+                  checkInTime: hotel?.checkInTime,
                 );
                 context.push('/reservation/${room.id}');
               },

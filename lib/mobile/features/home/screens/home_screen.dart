@@ -121,8 +121,8 @@ class _HomeScreenState extends State<HomeScreen> {
                                       itemBuilder: (context, index) {
                                         return _RecommendedCard(
                                           hotel: homeProvider.hotels[index],
-                                          minPrice: homeProvider
-                                              .getMinPriceForHotel(
+                                          priceLabel: homeProvider
+                                              .getMinPriceLabelForHotel(
                                                 homeProvider.hotels[index],
                                               ),
                                         );
@@ -152,7 +152,7 @@ class _HomeScreenState extends State<HomeScreen> {
                             itemBuilder: (context, index) {
                               return _HotelListCard(
                                 hotel: homeProvider.hotels[index],
-                                minPrice: homeProvider.getMinPriceForHotel(
+                                priceLabel: homeProvider.getMinPriceLabelForHotel(
                                   homeProvider.hotels[index],
                                 ),
                               );
@@ -172,9 +172,9 @@ class _HomeScreenState extends State<HomeScreen> {
 
 class _RecommendedCard extends StatelessWidget {
   final Hotel hotel;
-  final double minPrice;
+  final String priceLabel;
 
-  const _RecommendedCard({required this.hotel, required this.minPrice});
+  const _RecommendedCard({required this.hotel, required this.priceLabel});
 
   @override
   Widget build(BuildContext context) {
@@ -281,13 +281,14 @@ class _RecommendedCard extends StatelessWidget {
                             ],
                           ),
                         ),
-                        Text(
-                          '\$${minPrice.toStringAsFixed(0)}/3 Horas',
-                          style: AppTextStyles.caption.copyWith(
-                            color: Colors.white,
-                            fontWeight: FontWeight.w700,
+                        if (priceLabel.isNotEmpty)
+                          Text(
+                            priceLabel,
+                            style: AppTextStyles.caption.copyWith(
+                              color: Colors.white,
+                              fontWeight: FontWeight.w700,
+                            ),
                           ),
-                        ),
                       ],
                     ),
                   ],
@@ -305,9 +306,9 @@ class _RecommendedCard extends StatelessWidget {
 
 class _HotelListCard extends StatelessWidget {
   final Hotel hotel;
-  final double minPrice;
+  final String priceLabel;
 
-  const _HotelListCard({required this.hotel, required this.minPrice});
+  const _HotelListCard({required this.hotel, required this.priceLabel});
 
   @override
   Widget build(BuildContext context) {
@@ -404,15 +405,16 @@ class _HotelListCard extends StatelessWidget {
                     ],
                   ),
                   const SizedBox(height: 4),
-                  Align(
-                    alignment: Alignment.centerRight,
-                    child: Text(
-                      '\$${minPrice.toStringAsFixed(0)}/3 Horas',
-                      style: AppTextStyles.labelM.copyWith(
-                        color: AppColors.primaryBurgundy,
+                  if (priceLabel.isNotEmpty)
+                    Align(
+                      alignment: Alignment.centerRight,
+                      child: Text(
+                        priceLabel,
+                        style: AppTextStyles.labelM.copyWith(
+                          color: AppColors.primaryBurgundy,
+                        ),
                       ),
                     ),
-                  ),
                 ],
               ),
             ),

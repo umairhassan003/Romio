@@ -436,7 +436,7 @@ class _GalleryTileState extends State<_GalleryTile> {
 
 class _SlotPrice extends StatelessWidget {
   final String label;
-  final double value;
+  final double? value;
   const _SlotPrice({required this.label, required this.value});
 
   @override
@@ -447,11 +447,11 @@ class _SlotPrice extends StatelessWidget {
         Text(label, style: const TextStyle(color: AppColors.textSecondary, fontSize: 13)),
         const SizedBox(height: 4),
         Text(
-          '\$${value.toStringAsFixed(2)}',
-          style: const TextStyle(
+          value != null ? '\$${value!.toStringAsFixed(2)}' : 'Not set',
+          style: TextStyle(
             fontSize: 20,
             fontWeight: FontWeight.w700,
-            color: AppColors.primaryBurgundy,
+            color: value != null ? AppColors.primaryBurgundy : AppColors.textSecondary,
           ),
         ),
       ],

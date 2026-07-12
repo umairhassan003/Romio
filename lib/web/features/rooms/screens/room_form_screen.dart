@@ -60,9 +60,9 @@ class _RoomFormScreenState extends State<RoomFormScreen> {
           _existingRoom = room;
           _nameCtrl.text = room.name;
           _descCtrl.text = room.description ?? '';
-          _price3hCtrl.text = room.price3h.toStringAsFixed(2);
-          _price6hCtrl.text = room.price6h.toStringAsFixed(2);
-          _price24hCtrl.text = room.price24h.toStringAsFixed(2);
+          _price3hCtrl.text = room.price3h?.toStringAsFixed(2) ?? '';
+          _price6hCtrl.text = room.price6h?.toStringAsFixed(2) ?? '';
+          _price24hCtrl.text = room.price24h?.toStringAsFixed(2) ?? '';
           _coverUrl = room.coverImageUrl;
           _status = room.status;
           _selectedHotelId = room.hotelId;
@@ -161,16 +161,19 @@ class _RoomFormScreenState extends State<RoomFormScreen> {
       return;
     }
     final provider = context.read<RoomAdminProvider>();
-    final price3h = double.tryParse(_price3hCtrl.text) ?? 0;
-    final price6h = double.tryParse(_price6hCtrl.text) ?? 0;
-    final price24h = double.tryParse(_price24hCtrl.text) ?? 0;
+    double? slotPrice(TextEditingController ctrl) {
+      final v = double.tryParse(ctrl.text.trim());
+      return (v != null && v > 0) ? v : null;
+    }
+    final price3h = slotPrice(_price3hCtrl);
+    final price6h = slotPrice(_price6hCtrl);
+    final price24h = slotPrice(_price24hCtrl);
     final room = Room(
       id: _existingRoom?.id ?? '',
       hotelId: _selectedHotelId!,
       name: _nameCtrl.text.trim(),
       description: _descCtrl.text.trim().isEmpty ? null : _descCtrl.text.trim(),
-      // Keep the hourly rate consistent with the 3h slot for legacy/min-price use.
-      pricePerHour: price3h > 0 ? price3h / 3 : (_existingRoom?.pricePerHour ?? 0),
+      pricePerHour: price3h != null ? price3h / 3 : (_existingRoom?.pricePerHour ?? 0),
       price3h: price3h,
       price6h: price6h,
       price24h: price24h,
@@ -203,18 +206,19 @@ class _RoomFormScreenState extends State<RoomFormScreen> {
     }
   }
 
-  Widget _priceField(String label, TextEditingController ctrl, AppLocalizations l) {
+  Widget _priceField(String label, TextEditingController ctrl) {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        FormFieldLabel(label: label, isRequired: true),
+        FormFieldLabel(label: label),
         TextFormField(
           controller: ctrl,
           keyboardType: const TextInputType.numberWithOptions(decimal: true),
-          decoration: const InputDecoration(prefixText: '\$ '),
+          decoration: const InputDecoration(prefixText: '\$ ', hintText: 'Leave empty to disable'),
           validator: (v) {
-            final parsed = double.tryParse(v ?? '');
-            if (parsed == null || parsed <= 0) return l.roomFormRequired;
+            if (v == null || v.trim().isEmpty) return null;
+            final parsed = double.tryParse(v.trim());
+            if (parsed == null || parsed <= 0) return 'Enter a valid price or leave empty';
             return null;
           },
         ),
@@ -330,11 +334,11 @@ class _RoomFormScreenState extends State<RoomFormScreen> {
                         Row(
                           crossAxisAlignment: CrossAxisAlignment.start,
                           children: [
-                            Expanded(child: _priceField('Price — 3 hours', _price3hCtrl, l)),
+                            Expanded(child: _priceField('Price — 3 hours', _price3hCtrl)),
                             const SizedBox(width: 16),
-                            Expanded(child: _priceField('Price — 6 hours', _price6hCtrl, l)),
+                            Expanded(child: _priceField('Price — 6 hours', _price6hCtrl)),
                             const SizedBox(width: 16),
-                            Expanded(child: _priceField('Price — 24 hours', _price24hCtrl, l)),
+                            Expanded(child: _priceField('Price — 24 hours', _price24hCtrl)),
                           ],
                         ),
                         const SizedBox(height: 24),

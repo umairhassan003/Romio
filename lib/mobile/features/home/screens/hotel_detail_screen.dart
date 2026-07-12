@@ -64,7 +64,11 @@ class _HotelDetailScreenState extends State<HotelDetailScreen> {
             backgroundColor: AppColors.backgroundWhite,
             leading: _circleBtn(Icons.arrow_back, () => Navigator.pop(context)),
             flexibleSpace: FlexibleSpaceBar(
-              background: ImageCarousel(imageUrls: _imageUrls(hotel), placeholderIcon: Icons.hotel),
+              background: ImageCarousel(
+                imageUrls: _imageUrls(hotel),
+                placeholderIcon: Icons.hotel,
+                caption: hotel.name,
+              ),
             ),
           ),
           SliverToBoxAdapter(
@@ -87,7 +91,7 @@ class _HotelDetailScreenState extends State<HotelDetailScreen> {
                   lessLabel: l10n?.seeLess ?? 'Ver menos',
                 ),
                 const SizedBox(height: 24),
-                Text(l10n?.hotelDetailAmenitiesTitle ?? 'Lo que ofrecemos', style: AppTextStyles.headingM),
+                Text(l10n?.hotelDetailAmenitiesTitle ?? 'Servicios', style: AppTextStyles.headingM),
                 const SizedBox(height: 16),
                 AmenitiesGrid(
                   items: _amenityItems(hotel.amenities),
@@ -170,7 +174,7 @@ class _HotelDetailScreenState extends State<HotelDetailScreen> {
           Expanded(child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
             Row(mainAxisAlignment: MainAxisAlignment.spaceBetween, children: [
               Expanded(child: Text(room.name, style: AppTextStyles.labelM, maxLines: 1, overflow: TextOverflow.ellipsis)),
-              Text('\$${room.price3h.toStringAsFixed(0)}/3h', style: AppTextStyles.labelM.copyWith(color: AppColors.primaryBurgundy)),
+              Text(room.lowestSlotLabel, style: AppTextStyles.labelM.copyWith(color: AppColors.primaryBurgundy)),
             ]),
             const SizedBox(height: 4),
             Text(amenityText, style: AppTextStyles.caption.copyWith(color: AppColors.textSecondary), maxLines: 1, overflow: TextOverflow.ellipsis),

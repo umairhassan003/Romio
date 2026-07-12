@@ -35,6 +35,7 @@ class _HotelFormScreenState extends State<HotelFormScreen> {
   final _lngCtrl = TextEditingController();
 
   String? _coverUrl;
+  String? _checkInTime;
   bool _isActive = true;
   bool _payOnProperty = false;
   bool _isEdit = false;
@@ -65,6 +66,7 @@ class _HotelFormScreenState extends State<HotelFormScreen> {
           _latCtrl.text = hotel.latitude?.toString() ?? '';
           _lngCtrl.text = hotel.longitude?.toString() ?? '';
           _coverUrl = hotel.coverImageUrl;
+          _checkInTime = hotel.checkInTime;
           _isActive = hotel.isActive;
           _payOnProperty = hotel.payOnProperty;
           _selectedAmenities = hotel.amenities ?? [];
@@ -168,6 +170,7 @@ class _HotelFormScreenState extends State<HotelFormScreen> {
       coverImageUrl: _coverUrl,
       isActive: _isActive,
       payOnProperty: _payOnProperty,
+      checkInTime: _checkInTime,
       rating: _existingHotel?.rating ?? 0.0,
       createdAt: _existingHotel?.createdAt ?? DateTime.now(),
       updatedAt: DateTime.now(),
@@ -556,6 +559,68 @@ class _HotelFormScreenState extends State<HotelFormScreen> {
                           subtitle: Text(l.hotelFormPayOnPropertySubtitle),
                           contentPadding: EdgeInsets.zero,
                           activeColor: AppColors.primaryBurgundy,
+                        ),
+
+                        const SizedBox(height: 16),
+                        const Divider(),
+                        const SizedBox(height: 8),
+                        Row(
+                          children: [
+                            Expanded(
+                              child: Column(
+                                crossAxisAlignment: CrossAxisAlignment.start,
+                                children: [
+                                  const Text(
+                                    'Check-in Starts From',
+                                    style: TextStyle(fontSize: 15, fontWeight: FontWeight.w500),
+                                  ),
+                                  const SizedBox(height: 2),
+                                  Text(
+                                    _checkInTime != null
+                                        ? 'Guests can book from $_checkInTime onwards'
+                                        : 'No restriction — all time slots shown',
+                                    style: const TextStyle(fontSize: 13, color: AppColors.textSecondary),
+                                  ),
+                                ],
+                              ),
+                            ),
+                            const SizedBox(width: 16),
+                            OutlinedButton.icon(
+                              onPressed: () async {
+                                TimeOfDay initial = const TimeOfDay(hour: 14, minute: 0);
+                                if (_checkInTime != null) {
+                                  final parts = _checkInTime!.split(':');
+                                  initial = TimeOfDay(
+                                    hour: int.parse(parts[0]),
+                                    minute: int.parse(parts[1]),
+                                  );
+                                }
+                                final picked = await showTimePicker(
+                                  context: context,
+                                  initialTime: initial,
+                                  builder: (ctx, child) => MediaQuery(
+                                    data: MediaQuery.of(ctx).copyWith(alwaysUse24HourFormat: true),
+                                    child: child!,
+                                  ),
+                                );
+                                if (picked != null) {
+                                  setState(() {
+                                    _checkInTime =
+                                        '${picked.hour.toString().padLeft(2, '0')}:${picked.minute.toString().padLeft(2, '0')}';
+                                  });
+                                }
+                              },
+                              icon: const Icon(Icons.access_time),
+                              label: Text(_checkInTime ?? 'Set Time'),
+                            ),
+                            if (_checkInTime != null) ...[
+                              const SizedBox(width: 8),
+                              TextButton(
+                                onPressed: () => setState(() => _checkInTime = null),
+                                child: const Text('Clear'),
+                              ),
+                            ],
+                          ],
                         ),
 
                         const SizedBox(height: 24),

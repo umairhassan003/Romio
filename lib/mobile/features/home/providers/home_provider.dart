@@ -44,18 +44,47 @@ class HomeProvider extends ChangeNotifier {
     }
   }
 
-  /// Get the minimum 3-hour price for a hotel from its rooms (matches the
-  /// "/3 Horas" label shown on hotel cards).
+  /// Lowest configured slot price across all rooms of a hotel.
   double getMinPriceForHotel(Hotel hotel) {
+    final prices = <double>[];
+    void addRoom(Room r) {
+      final p = r.price3h ?? r.price6h ?? r.price24h;
+      if (p != null) prices.add(p);
+    }
     if (hotel.rooms != null && hotel.rooms!.isNotEmpty) {
-      return hotel.rooms!.map((r) => r.price3h).reduce((a, b) => a < b ? a : b);
+      hotel.rooms!.forEach(addRoom);
+    } else {
+      _roomsByHotelId[hotel.id]?.forEach(addRoom);
     }
-    // Fallback: check cached rooms
-    final cached = _roomsByHotelId[hotel.id];
-    if (cached != null && cached.isNotEmpty) {
-      return cached.map((r) => r.price3h).reduce((a, b) => a < b ? a : b);
+    return prices.isNotEmpty ? prices.reduce((a, b) => a < b ? a : b) : 0.0;
+  }
+
+  /// Formatted price label for the cheapest available slot, e.g. "\$50/3 Horas".
+  /// Returns an empty string when no rooms have any slot configured.
+  String getMinPriceLabelForHotel(Hotel hotel) {
+    double? best;
+    String slotLabel = '/3 Horas';
+
+    void check(double? price, String label) {
+      if (price != null && (best == null || price < best!)) {
+        best = price;
+        slotLabel = label;
+      }
     }
-    return 0.0; // Default
+
+    void checkRoom(Room r) {
+      check(r.price3h, '/3 Horas');
+      check(r.price6h, '/6 Horas');
+      check(r.price24h, '/24 Horas');
+    }
+
+    if (hotel.rooms != null && hotel.rooms!.isNotEmpty) {
+      hotel.rooms!.forEach(checkRoom);
+    } else {
+      _roomsByHotelId[hotel.id]?.forEach(checkRoom);
+    }
+
+    return best != null ? '\$${best!.toStringAsFixed(0)}$slotLabel' : '';
   }
 
   Future<void> loadHotels() async {
