@@ -8,10 +8,11 @@ class AppColors {
   static const Color primaryBurgundyVeryLight = Color(0xFFF2DBE6);
   static const Color backgroundPink = Color(0xFFFDF0F5);
   static const Color backgroundWhite = Color(0xFFFFFFFF);
-  static const Color surfaceLight = Color(0xFFF8E8EF);
+  static const Color surfaceLight = Color(0xFFF7F7F7);
 
   static const Color textPrimary = Color(0xFF1A1A1A);
   static const Color textSecondary = Color(0xFF6B6B6B);
+  static const Color textTertiary = Color(0xFFB3B3B3);
   static const Color textOnPrimary = Color(0xFFFFFFFF);
 
   static const Color borderLight = Color(0xFFE8D5DE);

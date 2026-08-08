@@ -152,9 +152,10 @@ class _HomeScreenState extends State<HomeScreen> {
                             itemBuilder: (context, index) {
                               return _HotelListCard(
                                 hotel: homeProvider.hotels[index],
-                                priceLabel: homeProvider.getMinPriceLabelForHotel(
-                                  homeProvider.hotels[index],
-                                ),
+                                priceLabel: homeProvider
+                                    .getMinPriceLabelForHotel(
+                                      homeProvider.hotels[index],
+                                    ),
                               );
                             },
                           ),
@@ -323,7 +324,7 @@ class _HotelListCard extends StatelessWidget {
         margin: const EdgeInsets.only(bottom: 16.0),
         padding: const EdgeInsets.all(12.0),
         decoration: BoxDecoration(
-          color: AppColors.backgroundPink,
+          color: AppColors.surfaceLight,
           borderRadius: BorderRadius.circular(16),
           boxShadow: [
             BoxShadow(
@@ -411,7 +412,7 @@ class _HotelListCard extends StatelessWidget {
                       child: Text(
                         priceLabel,
                         style: AppTextStyles.labelM.copyWith(
-                          color: AppColors.primaryBurgundy,
+                          color: AppColors.textPrimary,
                         ),
                       ),
                     ),

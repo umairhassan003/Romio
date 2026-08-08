@@ -32,21 +32,24 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
         onPageChanged: (index) => setState(() => _currentPage = index),
         children: [
           _buildPage(
-            imageUrl: 'images/onboarding1.jpg',
+            imageUrl: 'images/onboarding1.png',
             title: l10n?.onboardingTitle1 ?? 'Reserva',
-            subtitle: l10n?.onboardingSubtitle1 ??
-                'Romio te permite encontrar y reservar hoteles por horas de forma rápida, segura y confiable, todo desde tu móvil.',
+            subtitle:
+                l10n?.onboardingSubtitle1 ??
+                'Descubre una forma más flexible de reservar hoteles. Reserva estancias de 3, 6 o 24 horas, ideales para viajes de negocios, escapadas, largas escalas o momentos en los que una noche completa no es necesaria.',
             buttonLabel: l10n?.onboardingNext ?? 'Siguiente',
-            onButtonPressed: () => _pageController.nextPage(
-              duration: const Duration(milliseconds: 300),
-              curve: Curves.easeInOut,
-            ),
+            onButtonPressed:
+                () => _pageController.nextPage(
+                  duration: const Duration(milliseconds: 300),
+                  curve: Curves.easeInOut,
+                ),
           ),
           _buildPage(
             imageUrl: 'images/onboarding2.jpg',
-            title: l10n?.onboardingTitle2 ?? 'Pagos 100% seguros',
-            subtitle: l10n?.onboardingSubtitle2 ??
-                'Tu privacidad es lo más importante. Con Romio, tus pagos y datos personales se mantienen siempre seguros y confidenciales.',
+            title: l10n?.onboardingTitle2 ?? 'Hoteles a tu medida',
+            subtitle:
+                l10n?.onboardingSubtitle2 ??
+                'Explora una amplia selección de hoteles, compara diferentes opciones y organiza tu próxima estancia de forma rápida, cómoda y sencilla.',
             buttonLabel: l10n?.onboardingStart ?? 'Empezar',
             onButtonPressed: () => context.go('/login'),
           ),
@@ -74,10 +77,7 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
           child: SizedBox(
             height: imageHeight,
             width: double.infinity,
-            child: Image.asset(
-              imageUrl,
-              fit: BoxFit.cover,
-            ),
+            child: Image.asset(imageUrl, fit: BoxFit.cover),
           ),
         ),
         Expanded(
@@ -111,9 +111,10 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
                       width: isActive ? 28 : 8,
                       height: 8,
                       decoration: BoxDecoration(
-                        color: isActive
-                            ? AppColors.primaryBurgundy
-                            : AppColors.borderLight,
+                        color:
+                            isActive
+                                ? AppColors.primaryBurgundy
+                                : AppColors.borderLight,
                         borderRadius: BorderRadius.circular(4),
                       ),
                     );

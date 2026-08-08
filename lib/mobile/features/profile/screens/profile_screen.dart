@@ -176,7 +176,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
       child: Container(
         padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
         decoration: BoxDecoration(
-          color: AppColors.backgroundPink,
+          color: AppColors.surfaceLight,
           borderRadius: BorderRadius.circular(16),
           boxShadow: [
             BoxShadow(
@@ -188,12 +188,12 @@ class _ProfileScreenState extends State<ProfileScreen> {
         ),
         child: Row(
           children: [
-            Icon(icon, color: AppColors.primaryBurgundy, size: 24),
+            Icon(icon, color: AppColors.textPrimary, size: 24),
             const SizedBox(width: 16),
             Expanded(child: Text(title, style: AppTextStyles.labelM)),
             const Icon(
               Icons.chevron_right,
-              color: AppColors.textSecondary,
+              color: AppColors.primaryBurgundy,
               size: 20,
             ),
           ],

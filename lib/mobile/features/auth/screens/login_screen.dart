@@ -97,15 +97,15 @@ class _LoginScreenState extends State<LoginScreen> {
               Text(
                 l10n?.loginTitle ?? 'Iniciar sesión',
                 style: AppTextStyles.headingXL.copyWith(
-                  color: AppColors.primaryBurgundy,
+                  color: AppColors.textPrimary,
                 ),
               ),
-              const SizedBox(height: 8),
+              const SizedBox(height: 4),
 
               Text(
                 l10n?.loginSubtitle ?? 'Inicie sesión para continuar',
                 style: AppTextStyles.bodyL.copyWith(
-                  color: AppColors.primaryBurgundyLight,
+                  color: AppColors.textSecondary,
                 ),
               ),
 
@@ -120,7 +120,7 @@ class _LoginScreenState extends State<LoginScreen> {
                 ),
               ),
 
-              const SizedBox(height: 20),
+              const SizedBox(height: 16),
 
               _labeledField(
                 label: l10n?.passwordLabel ?? 'Contraseña',
@@ -188,6 +188,11 @@ class _LoginScreenState extends State<LoginScreen> {
                       onTap: () => context.push('/signup'),
                       child: Text(
                         l10n?.loginCreateAccount ?? 'Crea una cuenta.',
+                        style: AppTextStyles.bodyM.copyWith(
+                          color: AppColors.primaryBurgundy,
+                          decoration: TextDecoration.underline,
+                          decorationColor: AppColors.primaryBurgundy,
+                        ),
                       ),
                     ),
                   ],
@@ -201,7 +206,7 @@ class _LoginScreenState extends State<LoginScreen> {
                     'images/RomioLogo.svg',
                     height: 40,
                     colorFilter: const ColorFilter.mode(
-                      AppColors.primaryBurgundyVeryLight,
+                      AppColors.textTertiary,
                       BlendMode.srcIn,
                     ),
                   ),
