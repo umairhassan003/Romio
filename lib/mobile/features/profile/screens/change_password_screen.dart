@@ -2,49 +2,39 @@ import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import '../../../../core/theme/app_colors.dart';
 import '../../../../core/theme/app_text_styles.dart';
-import 'package:go_router/go_router.dart';
 import 'package:flutter_gen/gen_l10n/app_localizations.dart';
-import '../providers/auth_provider.dart';
+import '../../auth/providers/auth_provider.dart';
 
-/// Shown after the user verifies the recovery OTP from their email.
-/// Supabase creates a recovery session once the OTP is validated.
-class ResetPasswordScreen extends StatefulWidget {
-  const ResetPasswordScreen({super.key});
+class ChangePasswordScreen extends StatefulWidget {
+  const ChangePasswordScreen({super.key});
 
   @override
-  State<ResetPasswordScreen> createState() => _ResetPasswordScreenState();
+  State<ChangePasswordScreen> createState() => _ChangePasswordScreenState();
 }
 
-class _ResetPasswordScreenState extends State<ResetPasswordScreen> {
-  final _passwordController = TextEditingController();
+class _ChangePasswordScreenState extends State<ChangePasswordScreen> {
+  final _currentPasswordController = TextEditingController();
+  final _newPasswordController = TextEditingController();
   final _confirmPasswordController = TextEditingController();
-  bool _obscurePassword = true;
+  bool _obscureCurrent = true;
+  bool _obscureNew = true;
   bool _obscureConfirm = true;
 
   @override
-  void initState() {
-    super.initState();
-    WidgetsBinding.instance.addPostFrameCallback((_) {
-      final auth = context.read<AuthProvider>();
-      if (!auth.canResetPassword && mounted) {
-        context.go('/forgot-password');
-      }
-    });
-  }
-
-  @override
   void dispose() {
-    _passwordController.dispose();
+    _currentPasswordController.dispose();
+    _newPasswordController.dispose();
     _confirmPasswordController.dispose();
     super.dispose();
   }
 
-  Future<void> _updatePassword() async {
+  Future<void> _save() async {
     final l10n = AppLocalizations.of(context);
-    final password = _passwordController.text;
+    final current = _currentPasswordController.text;
+    final password = _newPasswordController.text;
     final confirm = _confirmPasswordController.text;
 
-    if (password.isEmpty) {
+    if (current.isEmpty || password.isEmpty) {
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
           content: Text(l10n?.passwordRequired ?? 'Por favor ingresa una contraseña'),
@@ -76,67 +66,33 @@ class _ResetPasswordScreenState extends State<ResetPasswordScreen> {
 
     final auth = context.read<AuthProvider>();
     try {
-      await auth.updatePassword(password);
-      await auth.signOut();
-      if (mounted) {
-        _showSuccessDialog();
-      }
-    } catch (e) {
+      await auth.changePassword(
+        currentPassword: current,
+        newPassword: password,
+      );
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
             content: Text(
-              l10n?.genericError ?? 'Ha ocurrido un error. Inténtalo de nuevo.',
+              l10n?.changePasswordSuccess ??
+                  'Contraseña actualizada correctamente',
             ),
           ),
         );
+        Navigator.pop(context);
+      }
+    } catch (e) {
+      if (mounted) {
+        final message = e.toString().toLowerCase().contains('invalid')
+            ? (l10n?.changePasswordWrongCurrent ??
+                'La contraseña actual no es correcta')
+            : (l10n?.genericError ??
+                'Ha ocurrido un error. Inténtalo de nuevo.');
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text(message)),
+        );
       }
     }
-  }
-
-  void _showSuccessDialog() {
-    final l10n = AppLocalizations.of(context);
-
-    showDialog(
-      context: context,
-      barrierDismissible: false,
-      builder: (ctx) => AlertDialog(
-        icon: const Icon(Icons.check_circle, color: AppColors.success, size: 64),
-        title: Text(
-          l10n?.resetPasswordSuccessTitle ?? 'Contraseña actualizada',
-          style: AppTextStyles.headingM,
-        ),
-        content: Text(
-          l10n?.resetPasswordSuccessBody ??
-              'Tu contraseña se ha actualizado correctamente. Ya puedes iniciar sesión con tu nueva contraseña.',
-          style: AppTextStyles.bodyM,
-          textAlign: TextAlign.center,
-        ),
-        actions: [
-          SizedBox(
-            width: double.infinity,
-            child: ElevatedButton(
-              style: ElevatedButton.styleFrom(
-                backgroundColor: AppColors.primaryBurgundy,
-                shape: RoundedRectangleBorder(
-                  borderRadius: BorderRadius.circular(28),
-                ),
-              ),
-              onPressed: () {
-                Navigator.pop(ctx);
-                context.go('/login');
-              },
-              child: Text(
-                l10n?.resetPasswordGoLogin ?? 'Iniciar sesión',
-                style: AppTextStyles.labelM.copyWith(
-                  color: AppColors.textOnPrimary,
-                ),
-              ),
-            ),
-          ),
-        ],
-      ),
-    );
   }
 
   InputDecoration _passwordDecoration({
@@ -171,31 +127,34 @@ class _ResetPasswordScreenState extends State<ResetPasswordScreen> {
       backgroundColor: AppColors.backgroundWhite,
       appBar: AppBar(
         title: Text(
-          l10n?.resetPasswordTitle ?? 'Nueva contraseña',
-          style: AppTextStyles.headingM,
+          l10n?.changePasswordTitle ?? 'Cambiar contraseña',
+          style: AppTextStyles.headingS,
         ),
         backgroundColor: Colors.transparent,
         elevation: 0,
         iconTheme: const IconThemeData(color: AppColors.primaryBurgundy),
       ),
-      body: Padding(
-        padding: const EdgeInsets.all(24.0),
+      body: SingleChildScrollView(
+        padding: const EdgeInsets.all(24),
         child: Column(
-          crossAxisAlignment: CrossAxisAlignment.stretch,
           children: [
-            Text(
-              l10n?.resetPasswordSubtitle ??
-                  'Ingresa tu nueva contraseña a continuación.',
-              style: AppTextStyles.bodyM,
-            ),
-            const SizedBox(height: 24),
             TextField(
-              controller: _passwordController,
-              obscureText: _obscurePassword,
+              controller: _currentPasswordController,
+              obscureText: _obscureCurrent,
               decoration: _passwordDecoration(
-                label: l10n?.resetPasswordNewLabel ?? 'Nueva contraseña',
-                obscure: _obscurePassword,
-                onToggle: () => setState(() => _obscurePassword = !_obscurePassword),
+                label: l10n?.changePasswordCurrentLabel ?? 'Contraseña actual',
+                obscure: _obscureCurrent,
+                onToggle: () => setState(() => _obscureCurrent = !_obscureCurrent),
+              ),
+            ),
+            const SizedBox(height: 16),
+            TextField(
+              controller: _newPasswordController,
+              obscureText: _obscureNew,
+              decoration: _passwordDecoration(
+                label: l10n?.changePasswordNewLabel ?? 'Nueva contraseña',
+                obscure: _obscureNew,
+                onToggle: () => setState(() => _obscureNew = !_obscureNew),
               ),
             ),
             const SizedBox(height: 16),
@@ -203,28 +162,31 @@ class _ResetPasswordScreenState extends State<ResetPasswordScreen> {
               controller: _confirmPasswordController,
               obscureText: _obscureConfirm,
               decoration: _passwordDecoration(
-                label: l10n?.resetPasswordConfirmLabel ?? 'Confirmar contraseña',
+                label:
+                    l10n?.changePasswordConfirmLabel ?? 'Confirmar nueva contraseña',
                 obscure: _obscureConfirm,
                 onToggle: () => setState(() => _obscureConfirm = !_obscureConfirm),
               ),
             ),
             const SizedBox(height: 32),
             SizedBox(
-              height: 56,
+              width: double.infinity,
+              height: 52,
               child: ElevatedButton(
+                onPressed: auth.isLoading ? null : _save,
                 style: ElevatedButton.styleFrom(
                   backgroundColor: AppColors.primaryBurgundy,
                   shape: RoundedRectangleBorder(
                     borderRadius: BorderRadius.circular(28),
                   ),
                 ),
-                onPressed: auth.isLoading ? null : _updatePassword,
                 child: auth.isLoading
                     ? const CircularProgressIndicator(
+                        strokeWidth: 2,
                         color: AppColors.textOnPrimary,
                       )
                     : Text(
-                        l10n?.resetPasswordSave ?? 'Guardar nueva contraseña',
+                        l10n?.changePasswordSave ?? 'Guardar contraseña',
                         style: AppTextStyles.labelM.copyWith(
                           color: AppColors.textOnPrimary,
                         ),

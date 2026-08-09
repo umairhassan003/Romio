@@ -7,6 +7,7 @@ class AuthProvider extends ChangeNotifier {
 
   User? _user;
   bool _isLoading = false;
+  bool _isRecoveryVerified = false;
 
   AuthProvider({
     required AuthRepository authRepository,
@@ -18,17 +19,28 @@ class AuthProvider extends ChangeNotifier {
   bool get isAuthenticated => _user != null;
   bool get isLoading => _isLoading;
 
+  /// True only after Supabase accepted the recovery OTP for this session.
+  bool get canResetPassword => _isRecoveryVerified && isAuthenticated;
+
   void _init() {
     _authRepository.authStateChanges.listen((data) {
       _user = data.session?.user;
+      if (data.event == AuthChangeEvent.signedOut) {
+        _isRecoveryVerified = false;
+      }
       notifyListeners();
     });
+  }
+
+  void _clearRecoveryState() {
+    _isRecoveryVerified = false;
   }
 
   Future<void> signIn(String email, String password) async {
     _isLoading = true;
     notifyListeners();
     try {
+      _clearRecoveryState();
       await _authRepository.signInWithEmailPassword(email, password);
     } finally {
       _isLoading = false;
@@ -40,6 +52,7 @@ class AuthProvider extends ChangeNotifier {
     _isLoading = true;
     notifyListeners();
     try {
+      _clearRecoveryState();
       await _authRepository.signUpWithEmailPassword(
         email, 
         password,
@@ -58,7 +71,68 @@ class AuthProvider extends ChangeNotifier {
     _isLoading = true;
     notifyListeners();
     try {
+      _clearRecoveryState();
       await _authRepository.signOut();
+    } finally {
+      _isLoading = false;
+      notifyListeners();
+    }
+  }
+
+  Future<void> resetPassword(String email) async {
+    _isLoading = true;
+    notifyListeners();
+    try {
+      _clearRecoveryState();
+      await _authRepository.resetPasswordForEmail(email);
+    } finally {
+      _isLoading = false;
+      notifyListeners();
+    }
+  }
+
+  Future<void> verifyRecoveryOtp({
+    required String email,
+    required String token,
+  }) async {
+    _isLoading = true;
+    notifyListeners();
+    try {
+      await _authRepository.verifyRecoveryOtp(email: email, token: token);
+      _isRecoveryVerified = true;
+    } finally {
+      _isLoading = false;
+      notifyListeners();
+    }
+  }
+
+  Future<void> updatePassword(String newPassword) async {
+    if (!canResetPassword) {
+      throw const AuthException('Recovery session required');
+    }
+
+    _isLoading = true;
+    notifyListeners();
+    try {
+      await _authRepository.updateUserPassword(newPassword);
+      _clearRecoveryState();
+    } finally {
+      _isLoading = false;
+      notifyListeners();
+    }
+  }
+
+  Future<void> changePassword({
+    required String currentPassword,
+    required String newPassword,
+  }) async {
+    _isLoading = true;
+    notifyListeners();
+    try {
+      await _authRepository.changePassword(
+        currentPassword: currentPassword,
+        newPassword: newPassword,
+      );
     } finally {
       _isLoading = false;
       notifyListeners();

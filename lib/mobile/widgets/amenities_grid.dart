@@ -34,9 +34,10 @@ class _AmenitiesGridState extends State<AmenitiesGrid> {
     final total = widget.items.length;
     final hasMore = total > AmenitiesGrid._perRow;
     // Collapsed shows just the first row of 4; expanded shows everything.
-    final visible = (!_expanded && hasMore)
-        ? widget.items.take(AmenitiesGrid._perRow).toList()
-        : widget.items;
+    final visible =
+        (!_expanded && hasMore)
+            ? widget.items.take(AmenitiesGrid._perRow).toList()
+            : widget.items;
 
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
@@ -64,13 +65,19 @@ class _AmenitiesGridState extends State<AmenitiesGrid> {
                 mainAxisSize: MainAxisSize.min,
                 children: [
                   Text(
-                    _expanded ? widget.lessLabel : '${widget.moreLabel} (${total - AmenitiesGrid._perRow})',
-                    style: AppTextStyles.labelM.copyWith(color: AppColors.primaryBurgundy),
+                    _expanded
+                        ? widget.lessLabel
+                        : '${widget.moreLabel} (${total - AmenitiesGrid._perRow})',
+                    style: AppTextStyles.labelM.copyWith(
+                      color: AppColors.textPrimary,
+                    ),
                   ),
                   Icon(
-                    _expanded ? Icons.keyboard_arrow_up : Icons.keyboard_arrow_down,
+                    _expanded
+                        ? Icons.keyboard_arrow_up
+                        : Icons.keyboard_arrow_down,
                     size: 20,
-                    color: AppColors.primaryBurgundy,
+                    color: AppColors.textPrimary,
                   ),
                 ],
               ),
@@ -97,13 +104,15 @@ class _AmenityCell extends StatelessWidget {
             color: AppColors.surfaceLight,
             borderRadius: BorderRadius.circular(16),
           ),
-          child: Icon(item.icon, color: AppColors.primaryBurgundyLight, size: 24),
+          child: Icon(item.icon, color: AppColors.textPrimary, size: 24),
         ),
         const SizedBox(height: 4),
         Flexible(
           child: Text(
             item.label,
-            style: AppTextStyles.caption.copyWith(color: AppColors.textSecondary),
+            style: AppTextStyles.caption.copyWith(
+              color: AppColors.textSecondary,
+            ),
             textAlign: TextAlign.center,
             maxLines: 2,
             overflow: TextOverflow.ellipsis,

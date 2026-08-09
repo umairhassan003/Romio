@@ -143,7 +143,7 @@ class _ReservationCard extends StatelessWidget {
       margin: const EdgeInsets.only(bottom: 16),
       padding: const EdgeInsets.all(16),
       decoration: BoxDecoration(
-        color: AppColors.backgroundPink,
+        color: AppColors.surfaceLight,
         borderRadius: BorderRadius.circular(16),
         boxShadow: [
           BoxShadow(
@@ -162,7 +162,7 @@ class _ReservationCard extends StatelessWidget {
               const Icon(
                 Icons.calendar_today,
                 size: 16,
-                color: AppColors.primaryBurgundy,
+                color: AppColors.textPrimary,
               ),
               const SizedBox(width: 8),
               Column(
@@ -184,7 +184,7 @@ class _ReservationCard extends StatelessWidget {
                   Text(
                     'Recuérdamelo',
                     style: AppTextStyles.caption.copyWith(
-                      color: AppColors.primaryBurgundy,
+                      color: AppColors.textPrimary,
                     ),
                   ),
                   Text(
@@ -198,7 +198,10 @@ class _ReservationCard extends StatelessWidget {
               const SizedBox(width: 4),
               Switch(
                 value: reminderOn,
-                activeColor: AppColors.primaryBurgundy,
+                activeColor: AppColors.backgroundWhite,
+                inactiveThumbColor: AppColors.backgroundWhite,
+                inactiveTrackColor: AppColors.textSecondary,
+                activeTrackColor: AppColors.primaryBurgundy,
                 onChanged: (v) => provider.toggleReminder(reservation.id, v),
               ),
             ],
@@ -274,7 +277,7 @@ class _ReservationCard extends StatelessWidget {
               Text(
                 '\$${reservation.totalPrice.toStringAsFixed(0)}',
                 style: AppTextStyles.labelM.copyWith(
-                  color: AppColors.primaryBurgundy,
+                  color: AppColors.textPrimary,
                 ),
               ),
             ],

@@ -87,6 +87,13 @@ class _ProfileScreenState extends State<ProfileScreen> {
                       const SizedBox(height: 12),
                       _menuCard(
                         context,
+                        Icons.lock_outline,
+                        l10n?.profileChangePassword ?? 'Cambiar contraseña',
+                        '/profile/change-password',
+                      ),
+                      const SizedBox(height: 12),
+                      _menuCard(
+                        context,
                         Icons.credit_card_outlined,
                         l10n?.profilePaymentMethod ?? 'Método de pago',
                         '/profile/payment-method',

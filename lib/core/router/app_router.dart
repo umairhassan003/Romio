@@ -5,12 +5,16 @@ import '../../mobile/features/onboarding/screens/splash_screen.dart';
 import '../../mobile/features/onboarding/screens/onboarding_screen.dart';
 import '../../mobile/features/auth/screens/login_screen.dart';
 import '../../mobile/features/auth/screens/signup_screen.dart';
+import '../../mobile/features/auth/screens/forgot_password_screen.dart';
+import '../../mobile/features/auth/screens/verify_otp_screen.dart';
+import '../../mobile/features/auth/screens/reset_password_screen.dart';
 import '../../mobile/features/home/screens/hotel_detail_screen.dart';
 import '../../mobile/features/home/screens/room_detail_screen.dart';
 import '../../mobile/features/reservation/screens/reservation_screen.dart';
 import '../../mobile/features/reservation/screens/payment_screen.dart';
 import '../../mobile/features/reservation/screens/confirmation_screen.dart';
 import '../../mobile/features/profile/screens/personal_info_screen.dart';
+import '../../mobile/features/profile/screens/change_password_screen.dart';
 import '../../mobile/features/profile/screens/payment_methods_screen.dart';
 import '../../mobile/features/profile/screens/language_screen.dart';
 import '../../mobile/features/profile/screens/faq_screen.dart';
@@ -41,6 +45,21 @@ final appRouter = GoRouter(
     GoRoute(
       path: '/signup',
       builder: (context, state) => const SignupScreen(),
+    ),
+    GoRoute(
+      path: '/forgot-password',
+      builder: (context, state) => const ForgotPasswordScreen(),
+    ),
+    GoRoute(
+      path: '/verify-otp',
+      builder: (context, state) {
+        final email = state.uri.queryParameters['email'] ?? '';
+        return VerifyOtpScreen(email: email);
+      },
+    ),
+    GoRoute(
+      path: '/reset-password',
+      builder: (context, state) => const ResetPasswordScreen(),
     ),
 
     // ── Main tab shell (Home / Reservations / Profile) ───────────
@@ -82,6 +101,10 @@ final appRouter = GoRouter(
     GoRoute(
       path: '/profile/personal-info',
       builder: (context, state) => const PersonalInfoScreen(),
+    ),
+    GoRoute(
+      path: '/profile/change-password',
+      builder: (context, state) => const ChangePasswordScreen(),
     ),
     GoRoute(
       path: '/profile/payment-method',

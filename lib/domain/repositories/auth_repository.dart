@@ -8,4 +8,10 @@ abstract class AuthRepository {
   Future<AuthResponse> signUpWithEmailPassword(String email, String password, {Map<String, dynamic>? data});
   Future<void> signOut();
   Future<void> resetPasswordForEmail(String email);
+  Future<void> verifyRecoveryOtp({required String email, required String token});
+  Future<void> updateUserPassword(String newPassword);
+  Future<void> changePassword({
+    required String currentPassword,
+    required String newPassword,
+  });
 }

@@ -144,10 +144,10 @@ class _SignupScreenState extends State<SignupScreen> {
       context: context,
       barrierDismissible: false,
       builder: (ctx) => AlertDialog(
-        icon: const Icon(Icons.check_circle, color: AppColors.success, size: 64),
-        title: const Text('Todo listo', style: AppTextStyles.headingM),
+        icon: const Icon(Icons.email_outlined, color: AppColors.primaryBurgundy, size: 64),
+        title: const Text('¡Casi listo!', style: AppTextStyles.headingM),
         content: const Text(
-          'Tu cuenta se ha creado correctamente.',
+          'Tu cuenta se ha creado correctamente.\n\nHemos enviado un correo de verificación a tu dirección de email. Por favor, revisa tu bandeja de entrada y haz clic en el enlace para activar tu cuenta.',
           style: AppTextStyles.bodyM,
           textAlign: TextAlign.center,
         ),
@@ -161,10 +161,10 @@ class _SignupScreenState extends State<SignupScreen> {
               ),
               onPressed: () {
                 Navigator.pop(ctx);
-                context.go('/home'); // Or /login depending on verify requirements
+                context.go('/login');
               },
               child: Text(
-                'Ir al inicio',
+                'Ir a iniciar sesión',
                 style: AppTextStyles.labelM.copyWith(color: AppColors.textOnPrimary),
               ),
             ),
