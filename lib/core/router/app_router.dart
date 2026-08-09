@@ -13,8 +13,14 @@ import '../../mobile/features/reservation/screens/confirmation_screen.dart';
 import '../../mobile/features/profile/screens/personal_info_screen.dart';
 import '../../mobile/features/profile/screens/payment_methods_screen.dart';
 import '../../mobile/features/profile/screens/language_screen.dart';
+import '../../mobile/features/profile/screens/faq_screen.dart';
+import '../../mobile/features/profile/screens/contact_screen.dart';
+import '../../mobile/features/profile/screens/terms_conditions_screen.dart';
+import '../../mobile/features/profile/screens/privacy_policy_screen.dart';
 import '../../mobile/features/offline/screens/offline_state_screen.dart';
+
 import '../../mobile/widgets/main_tab_shell.dart';
+
 
 final appRouter = GoRouter(
   initialLocation: '/',
@@ -85,6 +91,24 @@ final appRouter = GoRouter(
       path: '/profile/language',
       builder: (context, state) => const LanguageScreen(),
     ),
+    GoRoute(
+      path: '/profile/contact',
+      builder: (context, state) => const ContactScreen(),
+    ),
+    GoRoute(
+      path: '/profile/faq',
+      builder: (context, state) => const FaqScreen(),
+    ),
+    GoRoute(
+      path: '/profile/terms',
+      builder: (context, state) => const TermsConditionsScreen(),
+    ),
+    GoRoute(
+      path: '/profile/privacy-policy',
+      builder: (context, state) => const PrivacyPolicyScreen(),
+    ),
+
+
 
     // ── Offline ──────────────────────────────────────────────────
     GoRoute(

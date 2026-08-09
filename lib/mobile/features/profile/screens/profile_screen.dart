@@ -110,23 +110,32 @@ class _ProfileScreenState extends State<ProfileScreen> {
                         context,
                         Icons.mail_outline,
                         l10n?.profileContact ?? 'Contacto',
-                        null,
+                        '/profile/contact',
                       ),
                       const SizedBox(height: 12),
                       _menuCard(
                         context,
                         Icons.help_outline,
                         l10n?.profileFaq ?? 'FAQ',
-                        null,
+                        '/profile/faq',
                       ),
+
                       const SizedBox(height: 12),
                       _menuCard(
                         context,
                         Icons.gavel_outlined,
                         l10n?.profileTerms ?? 'Términos y Condiciones',
-                        null,
+                        '/profile/terms',
+                      ),
+                      const SizedBox(height: 12),
+                      _menuCard(
+                        context,
+                        Icons.privacy_tip_outlined,
+                        l10n?.profilePrivacyPolicy ?? 'Políticas de Privacidad',
+                        '/profile/privacy-policy',
                       ),
                       const SizedBox(height: 32),
+
 
                       // Logout
                       GestureDetector(
