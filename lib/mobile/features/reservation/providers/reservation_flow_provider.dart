@@ -13,8 +13,15 @@ class ReservationFlowProvider extends ChangeNotifier {
   final PaymentGateway _paymentGateway;
 
   static const List<String> _allTimes = [
-    '14:00', '15:00', '16:00', '17:00', '18:00',
-    '19:00', '20:00', '21:00', '22:00',
+    '14:00',
+    '15:00',
+    '16:00',
+    '17:00',
+    '18:00',
+    '19:00',
+    '20:00',
+    '21:00',
+    '22:00',
   ];
 
   // Flow state
@@ -40,9 +47,9 @@ class ReservationFlowProvider extends ChangeNotifier {
     required ReservationRepository reservationRepository,
     required PaymentRepository paymentRepository,
     required PaymentGateway paymentGateway,
-  })  : _reservationRepository = reservationRepository,
-        _paymentRepository = paymentRepository,
-        _paymentGateway = paymentGateway;
+  }) : _reservationRepository = reservationRepository,
+       _paymentRepository = paymentRepository,
+       _paymentGateway = paymentGateway;
 
   // Getters
   String? get selectedRoomId => _selectedRoomId;
@@ -75,10 +82,14 @@ class ReservationFlowProvider extends ChangeNotifier {
   /// Price for a given booking slot (3h / 6h / 24h). Returns 0 for unconfigured slots.
   double priceForSlot(int hours) {
     switch (hours) {
-      case 3:  return _price3h ?? 0;
-      case 6:  return _price6h ?? 0;
-      case 24: return _price24h ?? 0;
-      default: return _price3h ?? 0;
+      case 3:
+        return _price3h ?? 0;
+      case 6:
+        return _price6h ?? 0;
+      case 24:
+        return _price24h ?? 0;
+      default:
+        return _price3h ?? 0;
     }
   }
 
@@ -117,7 +128,7 @@ class ReservationFlowProvider extends ChangeNotifier {
     _selectedTime = times.isNotEmpty ? times.first : '14:00';
     _confirmedReservation = null;
     _error = null;
-    notifyListeners();
+    // notifyListeners();
   }
 
   void setDate(DateTime date) {
@@ -254,7 +265,9 @@ class ReservationFlowProvider extends ChangeNotifier {
       hotelName: _hotelName,
     );
 
-    final createdRes = await _reservationRepository.createReservation(reservation);
+    final createdRes = await _reservationRepository.createReservation(
+      reservation,
+    );
 
     final payment = Payment(
       id: '',

@@ -71,101 +71,126 @@ class _HotelDetailScreenState extends State<HotelDetailScreen> {
 
     return Scaffold(
       backgroundColor: AppColors.backgroundWhite,
-      body: CustomScrollView(
-        slivers: [
-          SliverAppBar(
-            expandedHeight: 280,
-            pinned: true,
-            backgroundColor: AppColors.backgroundWhite,
-            leading: _circleBtn(Icons.arrow_back, () => Navigator.pop(context)),
-            flexibleSpace: FlexibleSpaceBar(
-              background: ImageCarousel(
-                imageUrls: _imageUrls(hotel),
-                placeholderIcon: Icons.hotel,
-                caption: hotel.name,
-              ),
-            ),
-          ),
-          SliverToBoxAdapter(
-            child: Padding(
-              padding: const EdgeInsets.all(24),
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
+      body: SafeArea(
+        child: SingleChildScrollView(
+          padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 16),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              // 1. Floating Rounded Image Carousel (same style as RoomDetailScreen)
+              Stack(
                 children: [
-                  Text(hotel.name, style: AppTextStyles.headingL),
-                  const SizedBox(height: 8),
-                  Row(
-                    children: [
-                      const Icon(
-                        Icons.location_on,
-                        size: 16,
-                        color: AppColors.textSecondary,
+                  ClipRRect(
+                    borderRadius: BorderRadius.circular(24),
+                    child: SizedBox(
+                      height: 280,
+                      child: ImageCarousel(
+                        imageUrls: _imageUrls(hotel),
+                        placeholderIcon: Icons.hotel,
+                        caption: hotel.name,
                       ),
-                      const SizedBox(width: 4),
-                      Expanded(
-                        child: Text(
-                          hotel.address,
-                          style: AppTextStyles.bodyM.copyWith(
-                            color: AppColors.textSecondary,
-                          ),
+                    ),
+                  ),
+                  Positioned(
+                    top: 16,
+                    left: 16,
+                    child: GestureDetector(
+                      onTap: () => Navigator.pop(context),
+                      child: CircleAvatar(
+                        backgroundColor: Colors.white.withOpacity(0.9),
+                        child: const Icon(
+                          Icons.arrow_back,
+                          color: AppColors.primaryBurgundy,
+                          size: 20,
                         ),
                       ),
-                    ],
-                  ),
-                  const SizedBox(height: 24),
-                  Text(
-                    l10n?.hotelAboutTitle ?? 'Acerca del hotel',
-                    style: AppTextStyles.headingM,
-                  ),
-                  const SizedBox(height: 8),
-                  ExpandableText(
-                    hotel.description ?? 'Sin descripción.',
-                    moreLabel: l10n?.seeMore ?? 'Ver más',
-                    lessLabel: l10n?.seeLess ?? 'Ver menos',
-                  ),
-                  const SizedBox(height: 24),
-                  Text(
-                    l10n?.hotelDetailAmenitiesTitle ?? 'Servicios',
-                    style: AppTextStyles.headingM,
-                  ),
-                  const SizedBox(height: 16),
-                  AmenitiesGrid(
-                    items: _amenityItems(hotel.amenities),
-                    moreLabel: l10n?.seeMore ?? 'Ver más',
-                    lessLabel: l10n?.seeLess ?? 'Ver menos',
-                  ),
-                  const SizedBox(height: 32),
-                  Text(
-                    l10n?.hotelSelectRoom ?? 'Seleccionar habitación',
-                    style: AppTextStyles.headingM,
-                  ),
-                  const SizedBox(height: 16),
-                  FutureBuilder<List<Room>>(
-                    future: _roomsFuture,
-                    builder: (ctx, snap) {
-                      if (snap.connectionState == ConnectionState.waiting)
-                        return const Center(
-                          child: CircularProgressIndicator(
-                            color: AppColors.primaryBurgundy,
-                          ),
-                        );
-                      final rooms = snap.data ?? [];
-                      if (rooms.isEmpty)
-                        return const Text('No hay habitaciones disponibles.');
-                      return ListView.builder(
-                        physics: const NeverScrollableScrollPhysics(),
-                        shrinkWrap: true,
-                        padding: EdgeInsets.zero,
-                        itemCount: rooms.length,
-                        itemBuilder: (_, i) => _roomCard(context, rooms[i]),
-                      );
-                    },
+                    ),
                   ),
                 ],
               ),
-            ),
+              const SizedBox(height: 24),
+
+              // 2. Hotel name + address
+              Text(hotel.name, style: AppTextStyles.headingL),
+              const SizedBox(height: 8),
+              Row(
+                children: [
+                  const Icon(
+                    Icons.location_on,
+                    size: 16,
+                    color: AppColors.textSecondary,
+                  ),
+                  const SizedBox(width: 4),
+                  Expanded(
+                    child: Text(
+                      hotel.address,
+                      style: AppTextStyles.bodyM.copyWith(
+                        color: AppColors.textSecondary,
+                      ),
+                    ),
+                  ),
+                ],
+              ),
+              const SizedBox(height: 24),
+
+              // 3. About the hotel
+              Text(
+                l10n?.hotelAboutTitle ?? 'Acerca del hotel',
+                style: AppTextStyles.headingM,
+              ),
+              const SizedBox(height: 8),
+              ExpandableText(
+                hotel.description ?? 'Sin descripción.',
+                moreLabel: l10n?.seeMore ?? 'Ver más',
+                lessLabel: l10n?.seeLess ?? 'Ver menos',
+              ),
+              const SizedBox(height: 24),
+
+              // 4. Amenities
+              Text(
+                l10n?.hotelDetailAmenitiesTitle ?? 'Servicios',
+                style: AppTextStyles.headingM,
+              ),
+              const SizedBox(height: 16),
+              AmenitiesGrid(
+                items: _amenityItems(hotel.amenities),
+                moreLabel: l10n?.seeMore ?? 'Ver más',
+                lessLabel: l10n?.seeLess ?? 'Ver menos',
+              ),
+              const SizedBox(height: 32),
+
+              // 5. Select room
+              Text(
+                l10n?.hotelSelectRoom ?? 'Seleccionar habitación',
+                style: AppTextStyles.headingM,
+              ),
+              const SizedBox(height: 16),
+              FutureBuilder<List<Room>>(
+                future: _roomsFuture,
+                builder: (ctx, snap) {
+                  if (snap.connectionState == ConnectionState.waiting) {
+                    return const Center(
+                      child: CircularProgressIndicator(
+                        color: AppColors.primaryBurgundy,
+                      ),
+                    );
+                  }
+                  final rooms = snap.data ?? [];
+                  if (rooms.isEmpty) {
+                    return const Text('No hay habitaciones disponibles.');
+                  }
+                  return ListView.builder(
+                    physics: const NeverScrollableScrollPhysics(),
+                    shrinkWrap: true,
+                    padding: EdgeInsets.zero,
+                    itemCount: rooms.length,
+                    itemBuilder: (_, i) => _roomCard(context, rooms[i]),
+                  );
+                },
+              ),
+            ],
           ),
-        ],
+        ),
       ),
     );
   }
@@ -183,17 +208,6 @@ class _HotelDetailScreenState extends State<HotelDetailScreen> {
     }
     return urls;
   }
-
-  Widget _circleBtn(IconData icon, VoidCallback onTap) => Padding(
-    padding: const EdgeInsets.all(8),
-    child: CircleAvatar(
-      backgroundColor: Colors.white.withOpacity(0.9),
-      child: IconButton(
-        icon: Icon(icon, color: AppColors.primaryBurgundy, size: 20),
-        onPressed: onTap,
-      ),
-    ),
-  );
 
   List<AmenityItem> _amenityItems(List<Amenity>? amenities) {
     if (amenities != null && amenities.isNotEmpty) {
