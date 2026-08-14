@@ -15,6 +15,8 @@ import '../../mobile/features/reservation/screens/confirmation_screen.dart';
 import '../../mobile/features/profile/screens/personal_info_screen.dart';
 import '../../mobile/features/profile/screens/change_password_screen.dart';
 import '../../mobile/features/profile/screens/payment_methods_screen.dart';
+import '../../mobile/features/payment/screens/add_card_screen.dart';
+import '../../mobile/features/payment/screens/data_storage_info_screen.dart';
 import '../../mobile/features/profile/screens/language_screen.dart';
 import '../../mobile/features/profile/screens/faq_screen.dart';
 import '../../mobile/features/profile/screens/contact_screen.dart';
@@ -96,6 +98,14 @@ final appRouter = GoRouter(
     GoRoute(
       path: '/profile/payment-method',
       builder: (context, state) => const PaymentMethodScreen(),
+    ),
+    GoRoute(
+      path: '/profile/add-card',
+      builder: (context, state) => const AddCardScreen(),
+    ),
+    GoRoute(
+      path: '/profile/data-storage',
+      builder: (context, state) => const DataStorageInfoScreen(),
     ),
     GoRoute(
       path: '/profile/language',

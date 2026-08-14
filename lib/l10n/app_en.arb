@@ -586,7 +586,31 @@
     "termsSection9Title": "9. Terms Modification",
     "termsSection9Text": "Romio reserves the right to modify these Terms and Conditions at any time. Modifications take effect upon publication in the app. Continued use of the platform following modifications implies acceptance.",
     "termsSection10Title": "10. Law and jurisdiction",
-    "termsSection10Text": "These Terms and Conditions shall be governed by and construed in accordance with applicable laws. Any dispute arising from app use shall be submitted to the competent courts."
+    "termsSection10Text": "These Terms and Conditions shall be governed by and construed in accordance with applicable laws. Any dispute arising from app use shall be submitted to the competent courts.",
+    "addCardTitle": "Add card",
+    "addCardInfoSection": "Card information",
+    "addCardExpiryHint": "MM/YY",
+    "addCardBillingSection": "Billing address",
+    "addCardCountryLabel": "Country or region",
+    "addCardDisclaimer": "By providing your card details, you allow Romio to charge future payments to your card in accordance with the stated conditions.",
+    "addCardConfirm": "Confirm",
+    "cardUnsupportedBrand": "Only Visa and Mastercard are accepted",
+    "countryPickerTitle": "Country or region",
+    "profilePaymentMethodTitle": "Payment method",
+    "cardGenericLabel": "Card",
+    "cardExpiryShort": "Exp...",
+    "cardReturnMainMenu": "Back to main menu",
+    "paymentInfoTitle": "Payment information",
+    "paymentTermsAccept": "I have read and accept the Terms and Conditions and the Privacy Policy.",
+    "paymentConfirmPay": "Confirm and pay",
+    "paymentCvvSectionHelp": "To use a payment card, enter the three-digit verification code shown on the back of the card",
+    "paymentSelectCardError": "Select a card",
+    "paymentChooseOtherMethod": "Choose another payment method",
+    "dataStorageIntro1": "Romio offers the option to save your bank details to simplify future reservations.",
+    "dataStorageIntro2": "This service is designed to provide a very high level of security.",
+    "dataStorageBullet1": "Your bank details and transactions are protected.",
+    "dataStorageBullet2": "Our online payment service ensures your data stays secure and is handled with complete confidentiality.",
+    "dataStorageBullet3": "You will be asked to enter the security code (the three digits on the back of your credit card) for every transaction, to verify the card's validity and prevent fraudulent use. This information is never stored."
 }
 
 

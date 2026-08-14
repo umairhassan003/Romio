@@ -10,7 +10,7 @@ class EmailService {
   final SupabaseClient _supabaseClient;
 
   EmailService({SupabaseClient? client})
-      : _supabaseClient = client ?? Supabase.instance.client;
+    : _supabaseClient = client ?? Supabase.instance.client;
 
   /// Send a reservation notification email to the hotel.
   Future<void> sendReservationToHotel({
@@ -77,11 +77,7 @@ class EmailService {
     try {
       final response = await _supabaseClient.functions.invoke(
         'send-email',
-        body: {
-          'type': type,
-          'to': to,
-          'data': data,
-        },
+        body: {'type': type, 'to': to, 'data': data},
       );
 
       if (response.status != 200) {

@@ -1,59 +1,68 @@
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
-import '../../../../core/theme/app_colors.dart';
-import '../../../../core/theme/app_text_styles.dart';
+import 'package:provider/provider.dart';
 import 'package:flutter_gen/gen_l10n/app_localizations.dart';
 
-/// Displays the saved payment method (card or empty state) with options
-/// to delete and add new methods (PayPal or card).
-class PaymentMethodScreen extends StatefulWidget {
+import '../../../../core/theme/app_colors.dart';
+import '../../../../core/theme/app_text_styles.dart';
+import '../../../../core/utils/card_brand.dart';
+import '../../payment/models/saved_card.dart';
+import '../../payment/providers/card_wallet_provider.dart';
+import '../../payment/widgets/card_brand_logo.dart';
+
+/// Displays the guest's saved cards (from the in-memory [CardWalletProvider])
+/// with options to delete them and add new ones. When no card is saved it shows
+/// the "other payment types" state (PayPal + add card).
+class PaymentMethodScreen extends StatelessWidget {
   const PaymentMethodScreen({super.key});
 
   @override
-  State<PaymentMethodScreen> createState() => _PaymentMethodScreenState();
-}
+  Widget build(BuildContext context) {
+    final l10n = AppLocalizations.of(context);
+    final wallet = context.watch<CardWalletProvider>();
 
-class _PaymentMethodScreenState extends State<PaymentMethodScreen> {
-  // Holds whichever saved card mock is shown.  In production this would come
-  // from a Supabase query; for now we show a placeholder that disappears after
-  // the user deletes it.
-  bool _hasCard = true;
-
-  void _confirmDeleteCard(AppLocalizations? l10n) {
-    showDialog(
-      context: context,
-      builder: (ctx) => Dialog(
-        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
-        child: Padding(
-          padding: const EdgeInsets.all(32),
+    return Scaffold(
+      backgroundColor: AppColors.backgroundWhite,
+      body: SafeArea(
+        child: SingleChildScrollView(
+          padding: const EdgeInsets.fromLTRB(24, 24, 24, 24),
           child: Column(
-            mainAxisSize: MainAxisSize.min,
+            crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              const SizedBox(height: 8),
-              Text(
-                l10n?.deleteCardConfirmTitle ??
-                    '¿Estás seguro que quiere eliminar su tarjeta?',
-                textAlign: TextAlign.center,
-                style: AppTextStyles.headingS,
-              ),
-              const SizedBox(height: 28),
               Row(
-                mainAxisAlignment: MainAxisAlignment.center,
                 children: [
-                  _dialogBtn(
-                    label: l10n?.confirmSI ?? 'SI',
-                    onTap: () {
-                      Navigator.pop(ctx);
-                      _deleteCard(l10n);
-                    },
+                  GestureDetector(
+                    onTap: () => context.pop(),
+                    child: Container(
+                      width: 44,
+                      height: 44,
+                      decoration: const BoxDecoration(
+                        color: Color(0xFFF2F2F2),
+                        shape: BoxShape.circle,
+                      ),
+                      child: const Icon(
+                        Icons.arrow_back,
+                        color: AppColors.primaryBurgundy,
+                        size: 20,
+                      ),
+                    ),
                   ),
-                  const SizedBox(width: 16),
-                  _dialogBtn(
-                    label: l10n?.confirmNO ?? 'NO',
-                    onTap: () => Navigator.pop(ctx),
-                  ),
+                  const Spacer(),
                 ],
               ),
+              const SizedBox(height: 12),
+              Center(
+                child: Text(
+                  l10n?.profilePaymentMethodTitle ?? 'Método de pago',
+                  style: AppTextStyles.headingL,
+                ),
+              ),
+              const SizedBox(height: 24),
+
+              if (wallet.hasCards)
+                ..._buildSavedCards(context, l10n, wallet)
+              else
+                ..._buildEmptyState(context, l10n),
             ],
           ),
         ),
@@ -61,125 +70,146 @@ class _PaymentMethodScreenState extends State<PaymentMethodScreen> {
     );
   }
 
-  void _deleteCard(AppLocalizations? l10n) {
-    setState(() => _hasCard = false);
-    Navigator.of(context).push(
-      PageRouteBuilder(
-        opaque: false,
-        barrierColor: Colors.transparent,
-        pageBuilder: (_, __, ___) => _CardDeletedOverlay(l10n: l10n),
+  List<Widget> _buildSavedCards(
+    BuildContext context,
+    AppLocalizations? l10n,
+    CardWalletProvider wallet,
+  ) {
+    return [
+      for (final card in wallet.cards) ...[
+        _CardWidget(card: card),
+        const SizedBox(height: 16),
+      ],
+      const SizedBox(height: 8),
+      const Divider(color: AppColors.borderLight),
+      const SizedBox(height: 16),
+
+      // Ajustes section — one delete action per saved card.
+      Text(
+        l10n?.paymentMethodAjustes ?? 'Ajustes',
+        style: AppTextStyles.headingS,
       ),
-    );
-  }
+      const SizedBox(height: 12),
+      for (final card in wallet.cards) ...[
+        GestureDetector(
+          onTap: () => _confirmDeleteCard(context, l10n, card),
+          child: Container(
+            width: double.infinity,
+            padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
+            margin: const EdgeInsets.only(bottom: 10),
+            decoration: BoxDecoration(
+              color: AppColors.surfaceLight,
+              borderRadius: BorderRadius.circular(12),
+            ),
+            child: Text(
+              wallet.cards.length > 1
+                  ? '${l10n?.paymentMethodDeleteCard ?? 'Eliminar su tarjeta'} · ${card.maskedLabel}'
+                  : l10n?.paymentMethodDeleteCard ?? 'Eliminar su tarjeta',
+              style: AppTextStyles.labelM.copyWith(color: AppColors.error),
+            ),
+          ),
+        ),
+      ],
+      const SizedBox(height: 8),
 
-  @override
-  Widget build(BuildContext context) {
-    final l10n = AppLocalizations.of(context);
-
-    return Scaffold(
-      backgroundColor: AppColors.backgroundWhite,
-      body: SafeArea(
-        child: SingleChildScrollView(
-        padding: const EdgeInsets.fromLTRB(24, 24, 24, 24),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
+      // Add another card
+      GestureDetector(
+        onTap: () => context.push('/profile/add-card'),
+        child: Row(
           children: [
-            Row(
-              children: [
-                GestureDetector(
-                  onTap: () => context.pop(),
-                  child: Container(
-                    width: 44,
-                    height: 44,
-                    decoration: const BoxDecoration(
-                      color: Color(0xFFF2F2F2),
-                      shape: BoxShape.circle,
-                    ),
-                    child: const Icon(
-                      Icons.arrow_back,
-                      color: AppColors.primaryBurgundy,
-                      size: 20,
-                    ),
-                  ),
-                ),
-                const Spacer(),
-              ],
-            ),
-            const SizedBox(height: 12),
-            Center(
-              child: Text(
-                l10n?.profilePaymentMethod ?? 'Método de pago',
-                style: AppTextStyles.headingL,
+            const Icon(Icons.add, color: AppColors.primaryBurgundy, size: 20),
+            const SizedBox(width: 8),
+            Text(
+              l10n?.paymentMethodAddCard ?? 'Agregar método de pago',
+              style: AppTextStyles.labelM.copyWith(
+                color: AppColors.primaryBurgundy,
               ),
             ),
-            const SizedBox(height: 24),
-            if (_hasCard) ...[
-              _CardWidget(),
-              const SizedBox(height: 24),
-              const Divider(color: AppColors.borderLight),
-              const SizedBox(height: 16),
-
-              // Ajustes section
-              Text(
-                l10n?.paymentMethodAjustes ?? 'Ajustes',
-                style: AppTextStyles.headingS,
-              ),
-              const SizedBox(height: 12),
-              GestureDetector(
-                onTap: () => _confirmDeleteCard(l10n),
-                child: Container(
-                  padding: const EdgeInsets.symmetric(
-                    horizontal: 16,
-                    vertical: 14,
-                  ),
-                  decoration: BoxDecoration(
-                    color: AppColors.surfaceLight,
-                    borderRadius: BorderRadius.circular(12),
-                  ),
-                  child: Text(
-                    l10n?.paymentMethodDeleteCard ?? 'Eliminar su tarjeta',
-                    style: AppTextStyles.labelM.copyWith(
-                      color: AppColors.error,
-                    ),
-                  ),
-                ),
-              ),
-              const SizedBox(height: 16),
-              _DataStorageLink(l10n: l10n),
-            ] else ...[
-              // No card saved – show payment options
-              Text(
-                l10n?.paymentMethodOther ?? 'Otros tipos de pago',
-                style: AppTextStyles.headingS,
-              ),
-              const SizedBox(height: 16),
-              _PaymentOption(
-                logo: _PaypalLogo(),
-                title: 'Paypal',
-                subtitle: l10n?.paymentPaypalInfo ??
-                    'Serás redirigido al sitio de PayPal. Una vez realizada la transacción, volverás a nuestro sitio web para finalizar la reserva.',
-                onTap: () {},
-              ),
-              const Divider(color: AppColors.borderLight),
-              _PaymentOption(
-                logo: const Icon(
-                  Icons.credit_card,
-                  color: AppColors.textSecondary,
-                  size: 28,
-                ),
-                title: l10n?.paymentMethodAddCard ?? 'Agregar método de pago',
-                subtitle: null,
-                onTap: () => context.push('/profile/add-card'),
-                showArrow: true,
-              ),
-              const SizedBox(height: 24),
-              _DataStorageLink(l10n: l10n),
-            ],
           ],
         ),
       ),
-    ),
-  );
+      const SizedBox(height: 20),
+      _DataStorageLink(l10n: l10n),
+    ];
+  }
+
+  List<Widget> _buildEmptyState(BuildContext context, AppLocalizations? l10n) {
+    return [
+      const Divider(color: AppColors.borderLight),
+      _PaymentOption(
+        logo: const Icon(
+          Icons.credit_card,
+          color: AppColors.textSecondary,
+          size: 28,
+        ),
+        title: l10n?.paymentMethodAddCard ?? 'Agregar método de pago',
+        subtitle: null,
+        onTap: () => context.push('/profile/add-card'),
+        showArrow: true,
+      ),
+      const SizedBox(height: 24),
+      _DataStorageLink(l10n: l10n),
+    ];
+  }
+
+  void _confirmDeleteCard(
+    BuildContext context,
+    AppLocalizations? l10n,
+    SavedCard card,
+  ) {
+    showDialog(
+      context: context,
+      builder:
+          (ctx) => Dialog(
+            shape: RoundedRectangleBorder(
+              borderRadius: BorderRadius.circular(20),
+            ),
+            child: Padding(
+              padding: const EdgeInsets.all(32),
+              child: Column(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  const SizedBox(height: 8),
+                  Text(
+                    l10n?.deleteCardConfirmTitle ??
+                        '¿Estás seguro que quiere eliminar su tarjeta?',
+                    textAlign: TextAlign.center,
+                    style: AppTextStyles.headingS,
+                  ),
+                  const SizedBox(height: 28),
+                  Row(
+                    mainAxisAlignment: MainAxisAlignment.center,
+                    children: [
+                      _dialogBtn(
+                        label: l10n?.confirmSI ?? 'SI',
+                        onTap: () {
+                          Navigator.pop(ctx);
+                          context.read<CardWalletProvider>().removeCard(
+                            card.id,
+                          );
+                          Navigator.of(context).push(
+                            PageRouteBuilder(
+                              opaque: false,
+                              barrierColor: Colors.transparent,
+                              pageBuilder:
+                                  (_, __, ___) =>
+                                      _CardDeletedOverlay(l10n: l10n),
+                            ),
+                          );
+                        },
+                      ),
+                      const SizedBox(width: 16),
+                      _dialogBtn(
+                        label: l10n?.confirmNO ?? 'NO',
+                        onTap: () => Navigator.pop(ctx),
+                      ),
+                    ],
+                  ),
+                ],
+              ),
+            ),
+          ),
+    );
   }
 
   Widget _dialogBtn({required String label, required VoidCallback onTap}) {
@@ -207,8 +237,27 @@ class _PaymentMethodScreenState extends State<PaymentMethodScreen> {
 // ─── Dark card widget ─────────────────────────────────────────────────────────
 
 class _CardWidget extends StatelessWidget {
+  final SavedCard card;
+  const _CardWidget({required this.card});
+
   @override
   Widget build(BuildContext context) {
+    final l10n = AppLocalizations.of(context);
+    // Brand mark in white for contrast on the burgundy card.
+    final Widget brandMark =
+        card.brand == CardBrand.visa
+            ? const VisaLogo(color: Colors.white, plain: true)
+            : card.brand == CardBrand.mastercard
+            ? const MastercardLogo()
+            : const Icon(Icons.credit_card, color: Colors.white);
+
+    final brandName =
+        card.brand == CardBrand.visa
+            ? 'Visa'
+            : card.brand == CardBrand.mastercard
+            ? 'Mastercard'
+            : (l10n?.cardGenericLabel ?? 'Tarjeta');
+
     return Container(
       width: double.infinity,
       padding: const EdgeInsets.all(24),
@@ -219,60 +268,25 @@ class _CardWidget extends StatelessWidget {
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          // Brand logo area
-          Row(
-            children: [
-              _VisaLogo(),
-            ],
-          ),
+          Row(children: [brandMark]),
           const SizedBox(height: 32),
-          const Text(
-            'Ana López',
-            style: TextStyle(color: Colors.white, fontSize: 16),
-          ),
-          const SizedBox(height: 4),
-          const Text(
-            'Visa - XXXX6789',
-            style: TextStyle(color: Colors.white70, fontSize: 14),
+          if (card.holderName.isNotEmpty) ...[
+            Text(
+              card.holderName,
+              style: const TextStyle(color: Colors.white, fontSize: 16),
+            ),
+            const SizedBox(height: 4),
+          ],
+          Text(
+            '$brandName - XXXX${card.last4}',
+            style: const TextStyle(color: Colors.white70, fontSize: 14),
           ),
           const SizedBox(height: 2),
-          const Text(
-            'Exp... 04/30',
-            style: TextStyle(color: Colors.white70, fontSize: 14),
+          Text(
+            '${l10n?.cardExpiryShort ?? 'Exp...'} ${card.expiryLabel}',
+            style: const TextStyle(color: Colors.white70, fontSize: 14),
           ),
         ],
-      ),
-    );
-  }
-}
-
-// ─── Logos ────────────────────────────────────────────────────────────────────
-
-class _VisaLogo extends StatelessWidget {
-  @override
-  Widget build(BuildContext context) {
-    return const Text(
-      'VISA',
-      style: TextStyle(
-        color: Colors.white,
-        fontSize: 22,
-        fontWeight: FontWeight.w900,
-        fontStyle: FontStyle.italic,
-        letterSpacing: 2,
-      ),
-    );
-  }
-}
-
-class _PaypalLogo extends StatelessWidget {
-  @override
-  Widget build(BuildContext context) {
-    return const Text(
-      'PayPal',
-      style: TextStyle(
-        fontSize: 20,
-        fontWeight: FontWeight.w700,
-        color: Color(0xFF003087),
       ),
     );
   }
@@ -337,10 +351,7 @@ class _PaymentOption extends StatelessWidget {
               ),
             ),
             if (showArrow)
-              const Icon(
-                Icons.chevron_right,
-                color: AppColors.primaryBurgundy,
-              ),
+              const Icon(Icons.chevron_right, color: AppColors.primaryBurgundy),
           ],
         ),
       ),
@@ -357,17 +368,23 @@ class _DataStorageLink extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Center(
-      child: Row(
-        mainAxisSize: MainAxisSize.min,
-        children: [
-          const Icon(Icons.info_outline, size: 14, color: AppColors.info),
-          const SizedBox(width: 6),
-          Text(
-            l10n?.paymentMethodDataStorage ??
-                'Conocer  más sobre el almacenamiento de datos',
-            style: AppTextStyles.bodyS.copyWith(color: AppColors.info),
-          ),
-        ],
+      child: GestureDetector(
+        onTap: () => context.push('/profile/data-storage'),
+        behavior: HitTestBehavior.opaque,
+        child: Row(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            const Icon(Icons.info_outline, size: 14, color: AppColors.info),
+            const SizedBox(width: 6),
+            Flexible(
+              child: Text(
+                l10n?.paymentMethodDataStorage ??
+                    'Conocer  más sobre el almacenamiento de datos',
+                style: AppTextStyles.bodyS.copyWith(color: AppColors.info),
+              ),
+            ),
+          ],
+        ),
       ),
     );
   }
@@ -391,10 +408,7 @@ class _CardDeletedOverlay extends StatelessWidget {
               Align(
                 alignment: Alignment.topLeft,
                 child: GestureDetector(
-                  onTap: () {
-                    Navigator.pop(context);
-                    Navigator.pop(context);
-                  },
+                  onTap: () => Navigator.pop(context),
                   child: Container(
                     width: 44,
                     height: 44,
@@ -482,10 +496,7 @@ class _CardDeletedOverlay extends StatelessWidget {
                 width: double.infinity,
                 height: 52,
                 child: ElevatedButton(
-                  onPressed: () {
-                    Navigator.pop(context);
-                    Navigator.pop(context);
-                  },
+                  onPressed: () => Navigator.pop(context),
                   style: ElevatedButton.styleFrom(
                     backgroundColor: AppColors.primaryBurgundy,
                     shape: RoundedRectangleBorder(
@@ -494,7 +505,7 @@ class _CardDeletedOverlay extends StatelessWidget {
                     elevation: 0,
                   ),
                   child: Text(
-                    'Volver al menú principal',
+                    l10n?.cardReturnMainMenu ?? 'Volver al menú principal',
                     style: AppTextStyles.labelM.copyWith(color: Colors.white),
                   ),
                 ),

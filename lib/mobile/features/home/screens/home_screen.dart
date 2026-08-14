@@ -31,9 +31,9 @@ class _HomeScreenState extends State<HomeScreen> {
         context.read<ProfileProvider>().loadProfile(user.id);
         final profile = context.read<ProfileProvider>().profile;
         if (profile != null) {
-          context
-              .read<MyReservationsProvider>()
-              .loadUserReservations(profile.id);
+          context.read<MyReservationsProvider>().loadUserReservations(
+            profile.id,
+          );
         }
       }
     });
@@ -99,95 +99,95 @@ class _HomeScreenState extends State<HomeScreen> {
                                     ],
                                   ),
                                 ),
-                                GestureDetector(
-                                  onTap: () {},
-                                  child: Stack(
-                                    children: [
-                                      Container(
-                                        width: 44,
-                                        height: 44,
-                                        decoration: BoxDecoration(
-                                          color: AppColors.surfaceLight,
-                                          shape: BoxShape.circle,
-                                          border: Border.all(
-                                            color: AppColors.borderLight,
-                                          ),
-                                        ),
-                                        child: const Icon(
-                                          Icons.notifications_outlined,
-                                          color: AppColors.primaryBurgundy,
-                                          size: 22,
-                                        ),
-                                      ),
-                                      if (hasUpcoming)
-                                        Positioned(
-                                          top: 8,
-                                          right: 8,
-                                          child: Container(
-                                            width: 8,
-                                            height: 8,
-                                            decoration: const BoxDecoration(
-                                              color: AppColors.error,
-                                              shape: BoxShape.circle,
-                                            ),
-                                          ),
-                                        ),
-                                    ],
-                                  ),
-                                ),
+                                // GestureDetector(
+                                //   onTap: () {},
+                                //   child: Stack(
+                                //     children: [
+                                //       Container(
+                                //         width: 44,
+                                //         height: 44,
+                                //         decoration: BoxDecoration(
+                                //           color: AppColors.surfaceLight,
+                                //           shape: BoxShape.circle,
+                                //           border: Border.all(
+                                //             color: AppColors.borderLight,
+                                //           ),
+                                //         ),
+                                //         child: const Icon(
+                                //           Icons.notifications_outlined,
+                                //           color: AppColors.primaryBurgundy,
+                                //           size: 22,
+                                //         ),
+                                //       ),
+                                //       if (hasUpcoming)
+                                //         Positioned(
+                                //           top: 8,
+                                //           right: 8,
+                                //           child: Container(
+                                //             width: 8,
+                                //             height: 8,
+                                //             decoration: const BoxDecoration(
+                                //               color: AppColors.error,
+                                //               shape: BoxShape.circle,
+                                //             ),
+                                //           ),
+                                //         ),
+                                //     ],
+                                //   ),
+                                // ),
                               ],
                             ),
                           ),
-                          const SizedBox(height: 20),
+                          // const SizedBox(height: 20),
 
                           // ── Search + date row ────────────────────────────
-                          Padding(
-                            padding: const EdgeInsets.symmetric(horizontal: 24),
-                            child: Container(
-                              padding: const EdgeInsets.symmetric(
-                                horizontal: 16,
-                                vertical: 12,
-                              ),
-                              decoration: BoxDecoration(
-                                color: AppColors.backgroundWhite,
-                                borderRadius: BorderRadius.circular(12),
-                                border: Border.all(
-                                  color: AppColors.borderLight,
-                                ),
-                                boxShadow: [
-                                  BoxShadow(
-                                    color: Colors.black.withValues(alpha: 0.04),
-                                    blurRadius: 6,
-                                    offset: const Offset(0, 2),
-                                  ),
-                                ],
-                              ),
-                              child: Row(
-                                children: [
-                                  Expanded(
-                                    child: Text(
-                                      l10n?.homeSearchHint ??
-                                          '¿A dónde quieres ir?',
-                                      style: AppTextStyles.bodyM.copyWith(
-                                        color: AppColors.textSecondary,
-                                      ),
-                                    ),
-                                  ),
-                                  const VerticalDivider(
-                                    width: 24,
-                                    thickness: 1,
-                                    color: AppColors.borderLight,
-                                  ),
-                                  Text(
-                                    today,
-                                    style: AppTextStyles.labelM.copyWith(
-                                      color: AppColors.textPrimary,
-                                    ),
-                                  ),
-                                ],
-                              ),
-                            ),
-                          ),
+                          // Padding(
+                          //   padding: const EdgeInsets.symmetric(horizontal: 24),
+                          //   child: Container(
+                          //     padding: const EdgeInsets.symmetric(
+                          //       horizontal: 16,
+                          //       vertical: 12,
+                          //     ),
+                          //     decoration: BoxDecoration(
+                          //       color: AppColors.backgroundWhite,
+                          //       borderRadius: BorderRadius.circular(12),
+                          //       border: Border.all(
+                          //         color: AppColors.borderLight,
+                          //       ),
+                          //       boxShadow: [
+                          //         BoxShadow(
+                          //           color: Colors.black.withValues(alpha: 0.04),
+                          //           blurRadius: 6,
+                          //           offset: const Offset(0, 2),
+                          //         ),
+                          //       ],
+                          //     ),
+                          //     child: Row(
+                          //       children: [
+                          //         Expanded(
+                          //           child: Text(
+                          //             l10n?.homeSearchHint ??
+                          //                 '¿A dónde quieres ir?',
+                          //             style: AppTextStyles.bodyM.copyWith(
+                          //               color: AppColors.textSecondary,
+                          //             ),
+                          //           ),
+                          //         ),
+                          //         const VerticalDivider(
+                          //           width: 24,
+                          //           thickness: 1,
+                          //           color: AppColors.borderLight,
+                          //         ),
+                          //         Text(
+                          //           today,
+                          //           style: AppTextStyles.labelM.copyWith(
+                          //             color: AppColors.textPrimary,
+                          //           ),
+                          //         ),
+                          //       ],
+                          //     ),
+                          //   ),
+                          // ),
                           const SizedBox(height: 16),
 
                           // ── Reservation reminder banner ──────────────────
@@ -205,7 +205,9 @@ class _HomeScreenState extends State<HomeScreen> {
                                   color: AppColors.info.withValues(alpha: 0.08),
                                   borderRadius: BorderRadius.circular(12),
                                   border: Border.all(
-                                    color: AppColors.info.withValues(alpha: 0.3),
+                                    color: AppColors.info.withValues(
+                                      alpha: 0.3,
+                                    ),
                                   ),
                                 ),
                                 child: Row(
@@ -237,9 +239,10 @@ class _HomeScreenState extends State<HomeScreen> {
                                       ),
                                     ),
                                     GestureDetector(
-                                      onTap: () => setState(
-                                        () => _bannerDismissed = true,
-                                      ),
+                                      onTap:
+                                          () => setState(
+                                            () => _bannerDismissed = true,
+                                          ),
                                       child: const Icon(
                                         Icons.close,
                                         size: 16,
@@ -257,7 +260,8 @@ class _HomeScreenState extends State<HomeScreen> {
                           Padding(
                             padding: const EdgeInsets.symmetric(horizontal: 24),
                             child: Text(
-                              l10n?.homeRecommendedTitle ?? 'Hoteles recomendados',
+                              l10n?.homeRecommendedTitle ??
+                                  'Hoteles recomendados',
                               style: AppTextStyles.headingM,
                             ),
                           ),

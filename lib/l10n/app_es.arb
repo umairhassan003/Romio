@@ -586,7 +586,31 @@
     "termsSection9Title": "9. Modificación de los términos",
     "termsSection9Text": "Romio se reserva el derecho de modificar los presentes Términos y Condiciones en cualquier momento. Las modificaciones entrarán en vigor a partir de su publicación en la aplicación. El uso continuado de la plataforma tras la modificación de las condiciones implica la aceptación de las mismas.",
     "termsSection10Title": "10. Legislación y jurisdicción",
-    "termsSection10Text": "Los presentes Términos y Condiciones se regirán e interpretarán de acuerdo con la legislación vigente. Para cualquier controversia que pudiera derivarse del uso de la aplicación, las partes se someterán a los juzgados y tribunales competentes."
+    "termsSection10Text": "Los presentes Términos y Condiciones se regirán e interpretarán de acuerdo con la legislación vigente. Para cualquier controversia que pudiera derivarse del uso de la aplicación, las partes se someterán a los juzgados y tribunales competentes.",
+    "addCardTitle": "Añadir tarjeta",
+    "addCardInfoSection": "Información de la tarjeta",
+    "addCardExpiryHint": "MM/AA",
+    "addCardBillingSection": "Dirección de facturación",
+    "addCardCountryLabel": "País o región",
+    "addCardDisclaimer": "Al facilitarnos los datos de la tarjeta, permites que Romio cargue en tu tarjeta futuros pagos conforme a las condiciones estipuladas.",
+    "addCardConfirm": "Confirmar",
+    "cardUnsupportedBrand": "Solo se aceptan Visa y Mastercard",
+    "countryPickerTitle": "País o región",
+    "profilePaymentMethodTitle": "Método de pago",
+    "cardGenericLabel": "Tarjeta",
+    "cardExpiryShort": "Exp...",
+    "cardReturnMainMenu": "Volver al menú principal",
+    "paymentInfoTitle": "Información de pago",
+    "paymentTermsAccept": "He leído y acepto los Términos y Condiciones y las Políticas de Privacidad.",
+    "paymentConfirmPay": "Confirmar y pagar",
+    "paymentCvvSectionHelp": "Para usar una tarjeta de pago, escriba su código de verificación de tres dígitos visible en el reverso de la tarjeta",
+    "paymentSelectCardError": "Selecciona una tarjeta",
+    "paymentChooseOtherMethod": "Elegir otro método de pago",
+    "dataStorageIntro1": "Romio ofrece la posibilidad de guardar sus datos bancarios para simplificar futuras reservas.",
+    "dataStorageIntro2": "Este servicio se ha diseñado para ofrecer un nivel de seguridad muy elevado.",
+    "dataStorageBullet1": "Sus datos bancarios y sus transacciones están protegidos.",
+    "dataStorageBullet2": "Nuestro servicio de pago en línea garantiza que sus datos permanezcan seguros y se traten con total confidencialidad.",
+    "dataStorageBullet3": "Se le solicitará que introduzca el código de seguridad (los tres dígitos situados en la parte posterior de su tarjeta de crédito) durante cada transacción, con el fin de comprobar la validez de la tarjeta y evitar su uso fraudulento. Esta información nunca se almacena."
 }
 
 

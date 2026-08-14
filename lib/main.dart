@@ -26,6 +26,7 @@ import 'mobile/features/profile/providers/locale_provider.dart';
 import 'mobile/features/home/providers/home_provider.dart';
 import 'mobile/features/my_reservations/providers/my_reservations_provider.dart';
 import 'mobile/features/reservation/providers/reservation_flow_provider.dart';
+import 'mobile/features/payment/providers/card_wallet_provider.dart';
 
 /* 
  * Romio - Hotel Booking App
@@ -79,6 +80,9 @@ class MyApp extends StatelessWidget {
 
         // Locale Provider (language switching)
         ChangeNotifierProvider(create: (_) => LocaleProvider()),
+
+        // In-memory saved-card wallet (session only — not persisted)
+        ChangeNotifierProvider(create: (_) => CardWalletProvider()),
 
         // Inject Feature Providers (State Management)
         ChangeNotifierProvider(
