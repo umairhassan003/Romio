@@ -48,17 +48,18 @@ class AuthProvider extends ChangeNotifier {
     }
   }
 
-  Future<void> signUp(String email, String password, {String? firstName, String? lastName}) async {
+  Future<void> signUp(String email, String password, {String? firstName, String? lastName, String? city}) async {
     _isLoading = true;
     notifyListeners();
     try {
       _clearRecoveryState();
       await _authRepository.signUpWithEmailPassword(
-        email, 
+        email,
         password,
         data: {
           if (firstName != null) 'first_name': firstName,
           if (lastName != null) 'last_name': lastName,
+          if (city != null && city.isNotEmpty) 'city': city,
         }
       );
     } finally {

@@ -6,6 +6,7 @@ import 'package:go_router/go_router.dart';
 import 'package:flutter_gen/gen_l10n/app_localizations.dart';
 import '../providers/reservation_flow_provider.dart';
 import '../../profile/providers/profile_provider.dart';
+import '../../../widgets/app_calendar.dart';
 
 class ReservationScreen extends StatelessWidget {
   final String roomId;
@@ -20,25 +21,36 @@ class ReservationScreen extends StatelessWidget {
 
     return Scaffold(
       backgroundColor: AppColors.backgroundWhite,
-      appBar: AppBar(
-        title: Text(l10n?.reservationTitle ?? 'Reserva', style: AppTextStyles.headingM),
-        backgroundColor: Colors.transparent, elevation: 0,
-        iconTheme: const IconThemeData(color: AppColors.primaryBurgundy),
-      ),
       body: SingleChildScrollView(
-        padding: const EdgeInsets.all(24),
-        child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
+        padding: const EdgeInsets.fromLTRB(24, 0, 24, 24),
+        child: SafeArea(
+          child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
+          const SizedBox(height: 24),
+          GestureDetector(
+            onTap: () => context.pop(),
+            child: Container(
+              width: 44, height: 44,
+              decoration: const BoxDecoration(
+                color: Color(0xFFF2F2F2),
+                shape: BoxShape.circle,
+              ),
+              child: const Icon(Icons.arrow_back, color: AppColors.primaryBurgundy, size: 20),
+            ),
+          ),
+          const SizedBox(height: 24),
+          Text(
+            l10n?.reservationTitle ?? 'Reserva',
+            style: AppTextStyles.headingXL.copyWith(color: AppColors.textPrimary),
+          ),
+          const SizedBox(height: 24),
           // Date picker
           Text(l10n?.reservationSelectDate ?? 'Seleccionar fecha', style: AppTextStyles.headingM),
           const SizedBox(height: 16),
-          Container(
-            decoration: BoxDecoration(color: AppColors.backgroundPink, borderRadius: BorderRadius.circular(16)),
-            child: CalendarDatePicker(
-              initialDate: provider.selectedDate.isBefore(DateTime.now()) ? DateTime.now() : provider.selectedDate,
-              firstDate: DateTime.now(),
-              lastDate: DateTime.now().add(const Duration(days: 365)),
-              onDateChanged: (d) => provider.setDate(d),
-            ),
+          AppCalendar(
+            selectedDate: provider.selectedDate,
+            firstDate: DateTime.now(),
+            lastDate: DateTime.now().add(const Duration(days: 365)),
+            onDateSelected: (d) => provider.setDate(d),
           ),
           const SizedBox(height: 24),
 
@@ -126,6 +138,7 @@ class ReservationScreen extends StatelessWidget {
           const SizedBox(height: 100),
         ]),
       ),
+    ),
       bottomSheet: Container(
         padding: const EdgeInsets.all(24), width: double.infinity,
         decoration: const BoxDecoration(color: AppColors.backgroundWhite,

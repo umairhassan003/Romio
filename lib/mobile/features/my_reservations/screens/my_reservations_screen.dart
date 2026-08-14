@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
+import '../../../widgets/main_tab_shell.dart';
 import '../../../../core/theme/app_colors.dart';
 import '../../../../core/theme/app_text_styles.dart';
 import 'package:flutter_gen/gen_l10n/app_localizations.dart';
@@ -44,29 +45,64 @@ class _MyReservationsScreenState extends State<MyReservationsScreen> {
 
     return Scaffold(
       backgroundColor: AppColors.backgroundWhite,
-      appBar: AppBar(
-        title: Text(
-          l10n?.myReservationTitle ?? 'Mi Reserva',
-          style: AppTextStyles.headingM,
-        ),
-        backgroundColor: Colors.transparent,
-        elevation: 0,
-        automaticallyImplyLeading: false,
-        leading: IconButton(
-          icon: const Icon(Icons.arrow_back, color: AppColors.primaryBurgundy),
-          onPressed: () {},
+      body: SafeArea(
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Padding(
+              padding: const EdgeInsets.fromLTRB(24, 24, 24, 8),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  // Back button row — matches Profile header
+                  Row(
+                    children: [
+                      GestureDetector(
+                        onTap: () => TabSwitcher.switchTo(context, 0),
+                        child: Container(
+                          width: 44,
+                          height: 44,
+                          decoration: const BoxDecoration(
+                            color: Color(0xFFF2F2F2),
+                            shape: BoxShape.circle,
+                          ),
+                          child: const Icon(
+                            Icons.arrow_back,
+                            color: AppColors.primaryBurgundy,
+                            size: 20,
+                          ),
+                        ),
+                      ),
+                      const Spacer(),
+                    ],
+                  ),
+                  const SizedBox(height: 12),
+                  // Centered title — matches Profile header
+                  Center(
+                    child: Text(
+                      l10n?.myReservationTitle ?? 'Reservas',
+                      style: AppTextStyles.headingXL.copyWith(
+                        color: AppColors.textPrimary,
+                      ),
+                    ),
+                  ),
+                ],
+              ),
+            ),
+            Expanded(
+              child: provider.isLoading
+                  ? const Center(
+                      child: CircularProgressIndicator(
+                        color: AppColors.primaryBurgundy,
+                      ),
+                    )
+                  : provider.upcomingReservations.isEmpty
+                      ? _emptyState(l10n)
+                      : _reservationsList(context, provider, l10n),
+            ),
+          ],
         ),
       ),
-      body:
-          provider.isLoading
-              ? const Center(
-                child: CircularProgressIndicator(
-                  color: AppColors.primaryBurgundy,
-                ),
-              )
-              : provider.upcomingReservations.isEmpty
-              ? _emptyState(l10n)
-              : _reservationsList(context, provider, l10n),
     );
   }
 
@@ -77,7 +113,7 @@ class _MyReservationsScreenState extends State<MyReservationsScreen> {
         Icon(
           Icons.event_busy,
           size: 80,
-          color: AppColors.textSecondary.withOpacity(0.5),
+          color: AppColors.textSecondary.withValues(alpha: 0.5),
         ),
         const SizedBox(height: 24),
         Text(
@@ -147,7 +183,7 @@ class _ReservationCard extends StatelessWidget {
         borderRadius: BorderRadius.circular(16),
         boxShadow: [
           BoxShadow(
-            color: Colors.black.withOpacity(0.04),
+            color: Colors.black.withValues(alpha: 0.04),
             blurRadius: 6,
             offset: const Offset(0, 2),
           ),

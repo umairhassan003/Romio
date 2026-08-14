@@ -5,8 +5,28 @@ import '../features/my_reservations/screens/my_reservations_screen.dart';
 import '../features/profile/screens/profile_screen.dart';
 import 'liquid_glass_nav_bar.dart';
 
-/// Main bottom tab navigation shell shared across the 3 primary screens.
-/// Persists tab state using IndexedStack.
+/// Allows any descendant to switch the main tab without navigation.
+class TabSwitcher extends InheritedWidget {
+  final ValueNotifier<int> notifier;
+
+  const TabSwitcher({
+    super.key,
+    required this.notifier,
+    required super.child,
+  });
+
+  /// Switch to [index] from any descendant context.
+  static void switchTo(BuildContext context, int index) {
+    context
+        .getInheritedWidgetOfExactType<TabSwitcher>()
+        ?.notifier
+        .value = index;
+  }
+
+  @override
+  bool updateShouldNotify(TabSwitcher old) => false;
+}
+
 class MainTabShell extends StatefulWidget {
   const MainTabShell({super.key});
 
@@ -15,38 +35,63 @@ class MainTabShell extends StatefulWidget {
 }
 
 class _MainTabShellState extends State<MainTabShell> {
-  int _currentIndex = 0;
+  final _tabNotifier = ValueNotifier<int>(0);
 
-  final List<Widget> _tabs = const [
+  static const List<Widget> _tabs = [
     HomeScreen(),
     MyReservationsScreen(),
     ProfileScreen(),
   ];
 
   @override
+  void dispose() {
+    _tabNotifier.dispose();
+    super.dispose();
+  }
+
+  @override
   Widget build(BuildContext context) {
     final l10n = AppLocalizations.of(context);
 
-    return Scaffold(
-      // Let content flow behind the translucent (liquid-glass) nav bar.
-      extendBody: true,
-      body: IndexedStack(index: _currentIndex, children: _tabs),
-      bottomNavigationBar: LiquidGlassNavBar(
-        currentIndex: _currentIndex,
-        onTap: (index) => setState(() => _currentIndex = index),
-        items: [
-          NavSpec(Icons.home_outlined, Icons.home, l10n?.tabHome ?? 'Inicio'),
-          NavSpec(
-            Icons.calendar_today_outlined,
-            Icons.calendar_today,
-            l10n?.tabReservations ?? 'Reserva',
-          ),
-          NavSpec(
-            Icons.account_circle_outlined,
-            Icons.account_circle,
-            l10n?.tabProfile ?? 'Perfil',
-          ),
-        ],
+    return TabSwitcher(
+      notifier: _tabNotifier,
+      child: ValueListenableBuilder<int>(
+        valueListenable: _tabNotifier,
+        builder: (context, currentIndex, _) {
+          return Scaffold(
+            body: Stack(
+              children: [
+                IndexedStack(index: currentIndex, children: _tabs),
+                Positioned(
+                  left: 0,
+                  right: 0,
+                  bottom: 0,
+                  child: LiquidGlassNavBar(
+                    currentIndex: currentIndex,
+                    onTap: (index) => _tabNotifier.value = index,
+                    items: [
+                      NavSpec(
+                        Icons.home_outlined,
+                        Icons.home,
+                        l10n?.tabHome ?? 'Inicio',
+                      ),
+                      NavSpec(
+                        Icons.calendar_today_outlined,
+                        Icons.calendar_today,
+                        l10n?.tabReservations ?? 'Reserva',
+                      ),
+                      NavSpec(
+                        Icons.account_circle_outlined,
+                        Icons.account_circle,
+                        l10n?.tabProfile ?? 'Perfil',
+                      ),
+                    ],
+                  ),
+                ),
+              ],
+            ),
+          );
+        },
       ),
     );
   }

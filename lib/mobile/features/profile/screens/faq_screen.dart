@@ -3,7 +3,6 @@ import 'package:flutter_gen/gen_l10n/app_localizations.dart';
 import 'package:go_router/go_router.dart';
 import '../../../../core/theme/app_colors.dart';
 import '../../../../core/theme/app_text_styles.dart';
-import '../../../widgets/liquid_glass_nav_bar.dart';
 
 class FaqScreen extends StatefulWidget {
   const FaqScreen({super.key});
@@ -51,7 +50,6 @@ class _FaqScreenState extends State<FaqScreen> {
 
     return Scaffold(
       backgroundColor: AppColors.backgroundWhite,
-      extendBody: true,
       body: SafeArea(
         child: SingleChildScrollView(
           padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 16),
@@ -117,25 +115,9 @@ class _FaqScreenState extends State<FaqScreen> {
                   );
                 },
               ),
-              const SizedBox(height: 90), // Space for bottom floating nav bar
             ],
           ),
         ),
-      ),
-      bottomNavigationBar: LiquidGlassNavBar(
-        currentIndex: 2, // Perfil tab active
-        onTap: (index) {
-          if (index == 0 || index == 1) {
-            context.go('/home');
-          } else {
-            context.pop();
-          }
-        },
-        items: [
-          NavSpec(Icons.home_outlined, Icons.home, l10n?.tabHome ?? 'Inicio'),
-          NavSpec(Icons.calendar_today_outlined, Icons.calendar_today, l10n?.tabReservations ?? 'Reserva'),
-          NavSpec(Icons.account_circle_outlined, Icons.account_circle, l10n?.tabProfile ?? 'Perfil'),
-        ],
       ),
     );
   }

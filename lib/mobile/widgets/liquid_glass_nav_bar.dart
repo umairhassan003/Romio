@@ -8,7 +8,9 @@ class NavSpec {
   const NavSpec(this.icon, this.activeIcon, this.label);
 }
 
-/// A compact, frosted "liquid glass" pill nav bar shared across mobile screens.
+/// Pill-shaped bottom nav bar with an oval highlight on the active tab.
+/// Intended to be placed inside a [Positioned] at the bottom of a [Stack]
+/// so that Scaffold layout mechanics do not interfere with positioning.
 class LiquidGlassNavBar extends StatelessWidget {
   final int currentIndex;
   final ValueChanged<int> onTap;
@@ -21,112 +23,84 @@ class LiquidGlassNavBar extends StatelessWidget {
     required this.items,
   });
 
-  static const double _barHeight = 52;
-
   @override
   Widget build(BuildContext context) {
+    // viewPadding.bottom = physical system inset (gesture bar / nav buttons).
+    // Adding it to the outer bottom padding places the pill above the system bar.
+    final bottomInset = MediaQuery.of(context).viewPadding.bottom;
+
     return Padding(
-      padding: const EdgeInsets.fromLTRB(16, 0, 16, 12),
-      child: ClipRRect(
-        borderRadius: BorderRadius.circular(30),
-        child: Container(
-          decoration: BoxDecoration(
-            gradient: LinearGradient(
-              begin: Alignment.topLeft,
-              end: Alignment.bottomRight,
-              colors: [
-                Colors.white.withValues(alpha: 0.58),
-                const Color(0xFFEDE6EB).withValues(alpha: 0.46),
-              ],
+      padding: EdgeInsets.fromLTRB(16, 0, 16, 12 + bottomInset),
+      child: Container(
+        decoration: BoxDecoration(
+          color: Color.fromRGBO(217, 217, 217, 0.5),
+          borderRadius: BorderRadius.circular(40),
+          boxShadow: [
+            BoxShadow(
+              color: Colors.black.withValues(alpha: 0.12),
+              blurRadius: 20,
+              offset: const Offset(0, 4),
             ),
-            borderRadius: BorderRadius.circular(30),
-            border: Border.all(color: Colors.white.withValues(alpha: 0.6), width: 1.2),
-            boxShadow: [
-              BoxShadow(
-                color: Colors.black.withValues(alpha: 0.10),
-                blurRadius: 20,
-                offset: const Offset(0, 6),
-              ),
-            ],
-          ),
-          child: SafeArea(
-            top: false,
-            child: Padding(
-              padding: const EdgeInsets.all(6),
-              child: SizedBox(
-                height: _barHeight,
-                child: LayoutBuilder(
-                  builder: (context, constraints) {
-                    final tabWidth = constraints.maxWidth / items.length;
-                    return Stack(
-                      children: [
-                        // Sliding active-tab pill
-                        AnimatedPositioned(
-                          duration: const Duration(milliseconds: 280),
-                          curve: Curves.easeOutCubic,
-                          left: currentIndex * tabWidth + 4,
-                          width: tabWidth - 8,
-                          top: 2,
-                          bottom: 2,
-                          child: DecoratedBox(
-                            decoration: BoxDecoration(
-                              color: Colors.white.withValues(alpha: 0.9),
-                              borderRadius: BorderRadius.circular(20),
-                              boxShadow: [
-                                BoxShadow(
-                                  color: Colors.black.withValues(alpha: 0.06),
-                                  blurRadius: 8,
-                                  offset: const Offset(0, 2),
-                                ),
-                              ],
+          ],
+        ),
+        child: Padding(
+          padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 8),
+          child: Row(
+            children: List.generate(items.length, (i) {
+              final selected = i == currentIndex;
+              final item = items[i];
+              final iconColor = AppColors.primaryBurgundy;
+
+              return Expanded(
+                child: GestureDetector(
+                  behavior: HitTestBehavior.opaque,
+                  onTap: () => onTap(i),
+                  child: Center(
+                    child: AnimatedContainer(
+                      duration: const Duration(milliseconds: 220),
+                      curve: Curves.easeInOut,
+                      padding: const EdgeInsets.symmetric(
+                        horizontal: 18,
+                        vertical: 10,
+                      ),
+                      decoration: BoxDecoration(
+                        color:
+                            selected
+                                ? const Color.fromRGBO(217, 217, 217, 0.8)
+                                : Colors.transparent,
+                        borderRadius: BorderRadius.circular(28),
+                      ),
+                      child: Column(
+                        mainAxisSize: MainAxisSize.min,
+                        children: [
+                          AnimatedScale(
+                            scale: selected ? 1.12 : 1.0,
+                            duration: const Duration(milliseconds: 220),
+                            curve: Curves.easeOutBack,
+                            child: Icon(
+                              selected ? item.activeIcon : item.icon,
+                              size: 24,
+                              color: iconColor,
                             ),
                           ),
-                        ),
-                        // Tab items
-                        Row(
-                          children: List.generate(items.length, (i) {
-                            final selected = i == currentIndex;
-                            final item = items[i];
-                            final color = selected ? AppColors.textPrimary : AppColors.textSecondary;
-                            return Expanded(
-                              child: GestureDetector(
-                                behavior: HitTestBehavior.opaque,
-                                onTap: () => onTap(i),
-                                child: Column(
-                                  mainAxisAlignment: MainAxisAlignment.center,
-                                  children: [
-                                    AnimatedScale(
-                                      scale: selected ? 1.12 : 1.0,
-                                      duration: const Duration(milliseconds: 250),
-                                      curve: Curves.easeOutBack,
-                                      child: Icon(
-                                        selected ? item.activeIcon : item.icon,
-                                        size: 22,
-                                        color: color,
-                                      ),
-                                    ),
-                                    const SizedBox(height: 3),
-                                    AnimatedDefaultTextStyle(
-                                      duration: const Duration(milliseconds: 200),
-                                      style: TextStyle(
-                                        fontSize: 11,
-                                        fontWeight: selected ? FontWeight.w700 : FontWeight.w400,
-                                        color: color,
-                                      ),
-                                      child: Text(item.label),
-                                    ),
-                                  ],
-                                ),
-                              ),
-                            );
-                          }),
-                        ),
-                      ],
-                    );
-                  },
+                          const SizedBox(height: 4),
+                          AnimatedDefaultTextStyle(
+                            duration: const Duration(milliseconds: 200),
+                            style: TextStyle(
+                              fontSize: 12,
+                              fontWeight:
+                                  selected ? FontWeight.w700 : FontWeight.w400,
+                              color: iconColor,
+                            ),
+                            child: Text(item.label),
+                          ),
+                        ],
+                      ),
+                    ),
+                  ),
                 ),
-              ),
-            ),
+              );
+            }),
           ),
         ),
       ),

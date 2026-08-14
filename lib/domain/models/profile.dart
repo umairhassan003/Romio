@@ -5,6 +5,8 @@ class Profile {
   final String? lastName;
   final DateTime? dateOfBirth;
   final String? billingAddress;
+  final String? city;
+  final String? phone;
   final String? preferredLanguage;
   final String? avatarUrl;
   final DateTime createdAt;
@@ -17,6 +19,8 @@ class Profile {
     this.lastName,
     this.dateOfBirth,
     this.billingAddress,
+    this.city,
+    this.phone,
     this.preferredLanguage,
     this.avatarUrl,
     required this.createdAt,
@@ -33,6 +37,8 @@ class Profile {
           ? DateTime.parse(json['date_of_birth']) 
           : null,
       billingAddress: json['billing_address'] as String?,
+      city: json['city'] as String?,
+      phone: json['phone'] as String?,
       preferredLanguage: json['preferred_language'] as String?,
       avatarUrl: json['avatar_url'] as String?,
       createdAt: DateTime.parse(json['created_at']),
@@ -48,6 +54,8 @@ class Profile {
       if (lastName != null) 'last_name': lastName,
       if (dateOfBirth != null) 'date_of_birth': dateOfBirth!.toIso8601String().split('T')[0],
       if (billingAddress != null) 'billing_address': billingAddress,
+      if (city != null) 'city': city,
+      if (phone != null) 'phone': phone,
       if (preferredLanguage != null) 'preferred_language': preferredLanguage,
       if (avatarUrl != null) 'avatar_url': avatarUrl,
       'created_at': createdAt.toIso8601String(),
@@ -62,6 +70,8 @@ class Profile {
     String? lastName,
     DateTime? dateOfBirth,
     String? billingAddress,
+    String? city,
+    String? phone,
     String? preferredLanguage,
     String? avatarUrl,
     DateTime? createdAt,
@@ -74,6 +84,8 @@ class Profile {
       lastName: lastName ?? this.lastName,
       dateOfBirth: dateOfBirth ?? this.dateOfBirth,
       billingAddress: billingAddress ?? this.billingAddress,
+      city: city ?? this.city,
+      phone: phone ?? this.phone,
       preferredLanguage: preferredLanguage ?? this.preferredLanguage,
       avatarUrl: avatarUrl ?? this.avatarUrl,
       createdAt: createdAt ?? this.createdAt,

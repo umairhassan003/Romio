@@ -3,6 +3,7 @@ import 'package:provider/provider.dart';
 import '../../../../core/theme/app_colors.dart';
 import '../../../../core/theme/app_text_styles.dart';
 import 'package:go_router/go_router.dart';
+import '../../../widgets/main_tab_shell.dart';
 import 'package:flutter_gen/gen_l10n/app_localizations.dart';
 import '../../auth/providers/auth_provider.dart';
 import '../providers/profile_provider.dart';
@@ -29,10 +30,20 @@ class _ProfileScreenState extends State<ProfileScreen> {
   Widget build(BuildContext context) {
     final l10n = AppLocalizations.of(context);
     final profileProvider = context.watch<ProfileProvider>();
-    final name = profileProvider.displayName;
+    final authProvider = context.watch<AuthProvider>();
+    final firstName = profileProvider.profile?.firstName;
+    final isLoggedIn = authProvider.isAuthenticated;
+
+    final String titleText;
+    if (firstName != null && firstName.isNotEmpty) {
+      titleText = '${l10n?.profileGreetingHola ?? 'Hola'}, $firstName';
+    } else {
+      titleText = l10n?.profileWelcome ?? 'Bienvenidos';
+    }
 
     return Scaffold(
       backgroundColor: AppColors.backgroundWhite,
+
       body:
           profileProvider.isLoading
               ? const Center(
@@ -42,25 +53,38 @@ class _ProfileScreenState extends State<ProfileScreen> {
               )
               : SafeArea(
                 child: SingleChildScrollView(
-                  padding: const EdgeInsets.all(24),
+                  padding: const EdgeInsets.fromLTRB(24, 0, 24, 72),
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
-                      // Header
+                      // Header back button row
                       Row(
                         children: [
-                          IconButton(
-                            icon: const Icon(
-                              Icons.arrow_back,
-                              color: AppColors.primaryBurgundy,
+                          GestureDetector(
+                            onTap: () => TabSwitcher.switchTo(context, 0),
+                            child: Container(
+                              width: 44,
+                              height: 44,
+                              decoration: const BoxDecoration(
+                                color: Color(0xFFF2F2F2),
+                                shape: BoxShape.circle,
+                              ),
+                              child: const Icon(
+                                Icons.arrow_back,
+                                color: AppColors.primaryBurgundy,
+                                size: 20,
+                              ),
                             ),
-                            onPressed: () {},
                           ),
                           const Spacer(),
                         ],
                       ),
-                      const SizedBox(height: 8),
-                      Center(child: Text(name, style: AppTextStyles.headingL)),
+                      const SizedBox(height: 12),
+
+                      // Title greeting
+                      Center(
+                        child: Text(titleText, style: AppTextStyles.headingL),
+                      ),
                       const SizedBox(height: 4),
                       Center(
                         child: Text(
@@ -92,10 +116,12 @@ class _ProfileScreenState extends State<ProfileScreen> {
                         '/profile/change-password',
                       ),
                       const SizedBox(height: 12),
+
+                      const SizedBox(height: 12),
                       _menuCard(
                         context,
                         Icons.credit_card_outlined,
-                        l10n?.profilePaymentMethod ?? 'Método de pago',
+                        l10n?.profilePaymentMethod ?? 'Añadir método de pago',
                         '/profile/payment-method',
                       ),
                       const SizedBox(height: 12),
@@ -109,7 +135,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
 
                       // Support section
                       Text(
-                        l10n?.profileSupportSection ?? 'Support',
+                        l10n?.profileSupportSection ?? 'Soporte',
                         style: AppTextStyles.headingS,
                       ),
                       const SizedBox(height: 12),
@@ -123,15 +149,14 @@ class _ProfileScreenState extends State<ProfileScreen> {
                       _menuCard(
                         context,
                         Icons.help_outline,
-                        l10n?.profileFaq ?? 'FAQ',
+                        l10n?.profileFaq ?? 'Preguntas frecuentes',
                         '/profile/faq',
                       ),
-
                       const SizedBox(height: 12),
                       _menuCard(
                         context,
                         Icons.gavel_outlined,
-                        l10n?.profileTerms ?? 'Términos y Condiciones',
+                        l10n?.profileTerms ?? 'Términos y condiciones',
                         '/profile/terms',
                       ),
                       const SizedBox(height: 12),
@@ -143,37 +168,34 @@ class _ProfileScreenState extends State<ProfileScreen> {
                       ),
                       const SizedBox(height: 32),
 
-
-                      // Logout
-                      GestureDetector(
-                        onTap: () async {
-                          await context.read<AuthProvider>().signOut();
-                          if (context.mounted) context.go('/login');
-                        },
-                        child: Container(
+                      // Logout (only when authenticated)
+                      if (isLoggedIn) ...[
+                        SizedBox(
                           width: double.infinity,
-                          padding: const EdgeInsets.all(16),
-                          decoration: BoxDecoration(
-                            color: AppColors.backgroundWhite,
-                            borderRadius: BorderRadius.circular(16),
-                            border: Border.all(
-                              color: AppColors.error.withOpacity(0.3),
+                          height: 52,
+                          child: ElevatedButton(
+                            onPressed: () async {
+                              await context.read<AuthProvider>().signOut();
+                              if (context.mounted) context.go('/login');
+                            },
+                            style: ElevatedButton.styleFrom(
+                              backgroundColor: AppColors.error,
+                              foregroundColor: Colors.white,
+                              shape: RoundedRectangleBorder(
+                                borderRadius: BorderRadius.circular(28),
+                              ),
+                              elevation: 0,
+                            ),
+                            child: Text(
+                              l10n?.profileLogout ?? 'Cerrar sesión',
+                              style: AppTextStyles.labelM.copyWith(
+                                color: Colors.white,
+                              ),
                             ),
                           ),
-                          child: Row(
-                            children: [
-                              const Icon(Icons.logout, color: AppColors.error),
-                              const SizedBox(width: 16),
-                              Text(
-                                l10n?.profileLogout ?? 'Cerrar Sesión',
-                                style: AppTextStyles.labelM.copyWith(
-                                  color: AppColors.error,
-                                ),
-                              ),
-                            ],
-                          ),
                         ),
-                      ),
+                        const SizedBox(height: 24),
+                      ],
                     ],
                   ),
                 ),
@@ -196,7 +218,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
           borderRadius: BorderRadius.circular(16),
           boxShadow: [
             BoxShadow(
-              color: Colors.black.withOpacity(0.03),
+              color: Colors.black.withValues(alpha: 0.03),
               blurRadius: 4,
               offset: const Offset(0, 2),
             ),

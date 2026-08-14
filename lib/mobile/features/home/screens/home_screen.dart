@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import 'package:cached_network_image/cached_network_image.dart';
+import 'package:intl/intl.dart';
 import '../../../../core/theme/app_colors.dart';
 import '../../../../core/theme/app_text_styles.dart';
 import 'package:go_router/go_router.dart';
@@ -8,6 +9,7 @@ import 'package:flutter_gen/gen_l10n/app_localizations.dart';
 import '../providers/home_provider.dart';
 import '../../profile/providers/profile_provider.dart';
 import '../../auth/providers/auth_provider.dart';
+import '../../../features/my_reservations/providers/my_reservations_provider.dart';
 import '../../../../domain/models/hotel.dart';
 
 class HomeScreen extends StatefulWidget {
@@ -18,6 +20,8 @@ class HomeScreen extends StatefulWidget {
 }
 
 class _HomeScreenState extends State<HomeScreen> {
+  bool _bannerDismissed = false;
+
   @override
   void initState() {
     super.initState();
@@ -25,6 +29,12 @@ class _HomeScreenState extends State<HomeScreen> {
       final user = context.read<AuthProvider>().user;
       if (user != null) {
         context.read<ProfileProvider>().loadProfile(user.id);
+        final profile = context.read<ProfileProvider>().profile;
+        if (profile != null) {
+          context
+              .read<MyReservationsProvider>()
+              .loadUserReservations(profile.id);
+        }
       }
     });
   }
@@ -34,7 +44,10 @@ class _HomeScreenState extends State<HomeScreen> {
     final l10n = AppLocalizations.of(context);
     final homeProvider = context.watch<HomeProvider>();
     final profileProvider = context.watch<ProfileProvider>();
+    final reservationsProvider = context.watch<MyReservationsProvider>();
     final userName = profileProvider.displayName;
+    final hasUpcoming = reservationsProvider.upcomingReservations.isNotEmpty;
+    final today = DateFormat('dd/MM/yyyy').format(DateTime.now());
 
     return Scaffold(
       backgroundColor: AppColors.backgroundWhite,
@@ -46,8 +59,6 @@ class _HomeScreenState extends State<HomeScreen> {
                 ),
               )
               : SafeArea(
-                // Let content scroll *behind* the floating (translucent) nav
-                // bar; the content padding below keeps the last hotel clear.
                 bottom: false,
                 child: RefreshIndicator(
                   color: AppColors.primaryBurgundy,
@@ -57,44 +68,196 @@ class _HomeScreenState extends State<HomeScreen> {
                     child: Padding(
                       padding: EdgeInsets.only(
                         top: 24.0,
-                        // Clear the floating nav bar (its height + gesture inset)
-                        // so the last hotel isn't covered at the end of the list.
                         bottom: 76 + MediaQuery.of(context).viewPadding.bottom,
                       ),
                       child: Column(
                         crossAxisAlignment: CrossAxisAlignment.start,
                         children: [
-                          // ── Greeting ────────────────────────────
+                          // ── Header row: greeting + notification bell ─────
                           Padding(
-                            padding: const EdgeInsets.symmetric(
-                              horizontal: 24.0,
+                            padding: const EdgeInsets.symmetric(horizontal: 24),
+                            child: Row(
+                              crossAxisAlignment: CrossAxisAlignment.start,
+                              children: [
+                                Expanded(
+                                  child: Column(
+                                    crossAxisAlignment:
+                                        CrossAxisAlignment.start,
+                                    children: [
+                                      Text(
+                                        '${l10n?.homeGreeting ?? '¡Hola'} $userName!',
+                                        style: AppTextStyles.labelM.copyWith(
+                                          color: AppColors.primaryBurgundyLight,
+                                        ),
+                                      ),
+                                      const SizedBox(height: 4),
+                                      Text(
+                                        l10n?.homeFindHotel ??
+                                            'Encuentra tu mejor hotel',
+                                        style: AppTextStyles.headingXL,
+                                      ),
+                                    ],
+                                  ),
+                                ),
+                                GestureDetector(
+                                  onTap: () {},
+                                  child: Stack(
+                                    children: [
+                                      Container(
+                                        width: 44,
+                                        height: 44,
+                                        decoration: BoxDecoration(
+                                          color: AppColors.surfaceLight,
+                                          shape: BoxShape.circle,
+                                          border: Border.all(
+                                            color: AppColors.borderLight,
+                                          ),
+                                        ),
+                                        child: const Icon(
+                                          Icons.notifications_outlined,
+                                          color: AppColors.primaryBurgundy,
+                                          size: 22,
+                                        ),
+                                      ),
+                                      if (hasUpcoming)
+                                        Positioned(
+                                          top: 8,
+                                          right: 8,
+                                          child: Container(
+                                            width: 8,
+                                            height: 8,
+                                            decoration: const BoxDecoration(
+                                              color: AppColors.error,
+                                              shape: BoxShape.circle,
+                                            ),
+                                          ),
+                                        ),
+                                    ],
+                                  ),
+                                ),
+                              ],
                             ),
-                            child: Text(
-                              '${l10n?.homeGreeting ?? '¡Hola'}, $userName!',
-                              style: AppTextStyles.bodyM.copyWith(
-                                color: AppColors.primaryBurgundyLight,
+                          ),
+                          const SizedBox(height: 20),
+
+                          // ── Search + date row ────────────────────────────
+                          Padding(
+                            padding: const EdgeInsets.symmetric(horizontal: 24),
+                            child: Container(
+                              padding: const EdgeInsets.symmetric(
+                                horizontal: 16,
+                                vertical: 12,
+                              ),
+                              decoration: BoxDecoration(
+                                color: AppColors.backgroundWhite,
+                                borderRadius: BorderRadius.circular(12),
+                                border: Border.all(
+                                  color: AppColors.borderLight,
+                                ),
+                                boxShadow: [
+                                  BoxShadow(
+                                    color: Colors.black.withValues(alpha: 0.04),
+                                    blurRadius: 6,
+                                    offset: const Offset(0, 2),
+                                  ),
+                                ],
+                              ),
+                              child: Row(
+                                children: [
+                                  Expanded(
+                                    child: Text(
+                                      l10n?.homeSearchHint ??
+                                          '¿A dónde quieres ir?',
+                                      style: AppTextStyles.bodyM.copyWith(
+                                        color: AppColors.textSecondary,
+                                      ),
+                                    ),
+                                  ),
+                                  const VerticalDivider(
+                                    width: 24,
+                                    thickness: 1,
+                                    color: AppColors.borderLight,
+                                  ),
+                                  Text(
+                                    today,
+                                    style: AppTextStyles.labelM.copyWith(
+                                      color: AppColors.textPrimary,
+                                    ),
+                                  ),
+                                ],
                               ),
                             ),
                           ),
-                          const SizedBox(height: 4),
-                          Padding(
-                            padding: const EdgeInsets.symmetric(
-                              horizontal: 24.0,
-                            ),
-                            child: Text(
-                              l10n?.homeFindHotel ?? 'Encuentre su mejor hotel',
-                              style: AppTextStyles.headingXL,
-                            ),
-                          ),
-                          const SizedBox(height: 24),
+                          const SizedBox(height: 16),
 
-                          // ── Recommended section ─────────────────
-                          Padding(
-                            padding: const EdgeInsets.symmetric(
-                              horizontal: 24.0,
+                          // ── Reservation reminder banner ──────────────────
+                          if (hasUpcoming && !_bannerDismissed)
+                            Padding(
+                              padding: const EdgeInsets.symmetric(
+                                horizontal: 24,
+                              ),
+                              child: Container(
+                                padding: const EdgeInsets.symmetric(
+                                  horizontal: 16,
+                                  vertical: 12,
+                                ),
+                                decoration: BoxDecoration(
+                                  color: AppColors.info.withValues(alpha: 0.08),
+                                  borderRadius: BorderRadius.circular(12),
+                                  border: Border.all(
+                                    color: AppColors.info.withValues(alpha: 0.3),
+                                  ),
+                                ),
+                                child: Row(
+                                  children: [
+                                    const Icon(
+                                      Icons.info_outline,
+                                      color: AppColors.info,
+                                      size: 20,
+                                    ),
+                                    const SizedBox(width: 12),
+                                    Expanded(
+                                      child: Column(
+                                        crossAxisAlignment:
+                                            CrossAxisAlignment.start,
+                                        children: [
+                                          Text(
+                                            l10n?.homeNotificationBannerTitle ??
+                                                'Tienes una reserva programada',
+                                            style: AppTextStyles.labelM,
+                                          ),
+                                          Text(
+                                            l10n?.homeNotificationBannerBody ??
+                                                'No olvides tu reserva',
+                                            style: AppTextStyles.bodyS.copyWith(
+                                              color: AppColors.textSecondary,
+                                            ),
+                                          ),
+                                        ],
+                                      ),
+                                    ),
+                                    GestureDetector(
+                                      onTap: () => setState(
+                                        () => _bannerDismissed = true,
+                                      ),
+                                      child: const Icon(
+                                        Icons.close,
+                                        size: 16,
+                                        color: AppColors.textSecondary,
+                                      ),
+                                    ),
+                                  ],
+                                ),
+                              ),
                             ),
+                          if (hasUpcoming && !_bannerDismissed)
+                            const SizedBox(height: 16),
+
+                          // ── Recommended section ──────────────────────────
+                          Padding(
+                            padding: const EdgeInsets.symmetric(horizontal: 24),
                             child: Text(
-                              l10n?.homeRecommendedTitle ?? 'Recomendado',
+                              l10n?.homeRecommendedTitle ?? 'Hoteles recomendados',
                               style: AppTextStyles.headingM,
                             ),
                           ),
@@ -111,7 +274,7 @@ class _HomeScreenState extends State<HomeScreen> {
                                     )
                                     : ListView.builder(
                                       padding: const EdgeInsets.symmetric(
-                                        horizontal: 16.0,
+                                        horizontal: 16,
                                       ),
                                       scrollDirection: Axis.horizontal,
                                       itemCount:
@@ -131,11 +294,9 @@ class _HomeScreenState extends State<HomeScreen> {
                           ),
                           const SizedBox(height: 28),
 
-                          // ── All hotels section ──────────────────
+                          // ── All hotels section ───────────────────────────
                           Padding(
-                            padding: const EdgeInsets.symmetric(
-                              horizontal: 24.0,
-                            ),
+                            padding: const EdgeInsets.symmetric(horizontal: 24),
                             child: Text(
                               l10n?.homeAllHotelsTitle ?? 'Todos los hoteles',
                               style: AppTextStyles.headingM,
@@ -143,9 +304,7 @@ class _HomeScreenState extends State<HomeScreen> {
                           ),
                           const SizedBox(height: 16),
                           ListView.builder(
-                            padding: const EdgeInsets.symmetric(
-                              horizontal: 24.0,
-                            ),
+                            padding: const EdgeInsets.symmetric(horizontal: 24),
                             physics: const NeverScrollableScrollPhysics(),
                             shrinkWrap: true,
                             itemCount: homeProvider.hotels.length,
@@ -183,12 +342,12 @@ class _RecommendedCard extends StatelessWidget {
       onTap: () => context.push('/hotel/${hotel.id}'),
       child: Container(
         width: 200,
-        margin: const EdgeInsets.symmetric(horizontal: 8.0),
+        margin: const EdgeInsets.symmetric(horizontal: 8),
         decoration: BoxDecoration(
           borderRadius: BorderRadius.circular(16),
           boxShadow: [
             BoxShadow(
-              color: Colors.black.withOpacity(0.06),
+              color: Colors.black.withValues(alpha: 0.06),
               blurRadius: 8,
               offset: const Offset(0, 4),
             ),
@@ -198,7 +357,6 @@ class _RecommendedCard extends StatelessWidget {
           borderRadius: BorderRadius.circular(16),
           child: Stack(
             children: [
-              // Image
               Positioned.fill(
                 child:
                     hotel.coverImageUrl != null
@@ -227,7 +385,6 @@ class _RecommendedCard extends StatelessWidget {
                           ),
                         ),
               ),
-              // Gradient overlay for text
               Positioned.fill(
                 child: DecoratedBox(
                   decoration: BoxDecoration(
@@ -236,14 +393,13 @@ class _RecommendedCard extends StatelessWidget {
                       end: Alignment.bottomCenter,
                       colors: [
                         Colors.transparent,
-                        Colors.black.withOpacity(0.6),
+                        Colors.black.withValues(alpha: 0.6),
                       ],
                       stops: const [0.4, 1.0],
                     ),
                   ),
                 ),
               ),
-              // Bottom text
               Positioned(
                 bottom: 12,
                 left: 12,
@@ -315,20 +471,20 @@ class _HotelListCard extends StatelessWidget {
   Widget build(BuildContext context) {
     final amenityText =
         hotel.amenities?.isNotEmpty == true
-            ? hotel.amenities!.take(3).map((a) => '• ${a.name}').join('  ')
+            ? hotel.amenities!.take(2).map((a) => '• ${a.name}').join('  ')
             : '• Wifi  • AC';
 
     return GestureDetector(
       onTap: () => context.push('/hotel/${hotel.id}'),
       child: Container(
-        margin: const EdgeInsets.only(bottom: 16.0),
-        padding: const EdgeInsets.all(12.0),
+        margin: const EdgeInsets.only(bottom: 16),
+        padding: const EdgeInsets.all(12),
         decoration: BoxDecoration(
           color: AppColors.surfaceLight,
           borderRadius: BorderRadius.circular(16),
           boxShadow: [
             BoxShadow(
-              color: Colors.black.withOpacity(0.04),
+              color: Colors.black.withValues(alpha: 0.04),
               blurRadius: 8,
               offset: const Offset(0, 2),
             ),
@@ -336,7 +492,6 @@ class _HotelListCard extends StatelessWidget {
         ),
         child: Row(
           children: [
-            // Thumbnail
             Container(
               width: 80,
               height: 80,

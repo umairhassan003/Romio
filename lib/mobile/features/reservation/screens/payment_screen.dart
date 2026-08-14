@@ -44,16 +44,37 @@ class _PaymentScreenState extends State<PaymentScreen> {
 
     return Scaffold(
       backgroundColor: AppColors.backgroundWhite,
-      appBar: AppBar(
-        title: Text(l10n?.paymentTitle ?? 'Método de pago', style: AppTextStyles.headingM),
-        backgroundColor: Colors.transparent, elevation: 0,
-        iconTheme: const IconThemeData(color: AppColors.primaryBurgundy),
-      ),
       body: Form(
         key: _formKey,
         child: ListView(
-          padding: const EdgeInsets.fromLTRB(24, 24, 24, 140),
+          padding: const EdgeInsets.fromLTRB(24, 0, 24, 140),
           children: [
+            SafeArea(
+              bottom: false,
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  const SizedBox(height: 24),
+                  GestureDetector(
+                    onTap: () => context.pop(),
+                    child: Container(
+                      width: 44, height: 44,
+                      decoration: const BoxDecoration(
+                        color: Color(0xFFF2F2F2),
+                        shape: BoxShape.circle,
+                      ),
+                      child: const Icon(Icons.arrow_back, color: AppColors.primaryBurgundy, size: 20),
+                    ),
+                  ),
+                  const SizedBox(height: 24),
+                  Text(
+                    l10n?.paymentTitle ?? 'Método de pago',
+                    style: AppTextStyles.headingXL.copyWith(color: AppColors.textPrimary),
+                  ),
+                  const SizedBox(height: 24),
+                ],
+              ),
+            ),
             Text(
               l10n?.paymentSubtitle ?? 'Seleccione un método de pago para\ngarantizar su reserva privada.',
               style: AppTextStyles.bodyM.copyWith(color: AppColors.textSecondary),

@@ -75,13 +75,38 @@ class ProfileProvider extends ChangeNotifier {
   Future<bool> updatePersonalInfo({
     String? firstName,
     String? lastName,
+    String? city,
+    String? phone,
   }) async {
     if (_profile == null) return false;
     final updated = _profile!.copyWith(
       firstName: firstName ?? _profile!.firstName,
       lastName: lastName ?? _profile!.lastName,
+      city: city ?? _profile!.city,
+      phone: phone ?? _profile!.phone,
       updatedAt: DateTime.now(),
     );
     return updateProfile(updated);
+  }
+
+  /// Permanently deletes the current user's account from the database.
+  /// On success the local profile is cleared; callers should sign out and
+  /// route back to login.
+  Future<bool> deleteAccount() async {
+    _isLoading = true;
+    _error = null;
+    notifyListeners();
+    try {
+      await _profileRepository.deleteAccount();
+      _profile = null;
+      return true;
+    } catch (e) {
+      _error = e.toString();
+      debugPrint('Error deleting account: $e');
+      return false;
+    } finally {
+      _isLoading = false;
+      notifyListeners();
+    }
   }
 }

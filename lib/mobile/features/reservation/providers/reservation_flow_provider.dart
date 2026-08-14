@@ -74,9 +74,13 @@ class ReservationFlowProvider extends ChangeNotifier {
   }
 
   /// Times the guest can select, filtered by the hotel's check-in start time.
+  /// The stored check-in time may include seconds ('HH:mm:ss'); normalize it
+  /// to 'HH:mm' so the boundary slot (equal to check-in) is kept.
   List<String> get availableTimes {
-    if (_checkInTime == null) return _allTimes;
-    return _allTimes.where((t) => t.compareTo(_checkInTime!) >= 0).toList();
+    if (_checkInTime == null || _checkInTime!.isEmpty) return _allTimes;
+    final normalized =
+        _checkInTime!.length >= 5 ? _checkInTime!.substring(0, 5) : _checkInTime!;
+    return _allTimes.where((t) => t.compareTo(normalized) >= 0).toList();
   }
 
   /// Price for a given booking slot (3h / 6h / 24h). Returns 0 for unconfigured slots.

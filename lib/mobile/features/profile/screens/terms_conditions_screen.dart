@@ -3,7 +3,6 @@ import 'package:flutter_gen/gen_l10n/app_localizations.dart';
 import 'package:go_router/go_router.dart';
 import '../../../../core/theme/app_colors.dart';
 import '../../../../core/theme/app_text_styles.dart';
-import '../../../widgets/liquid_glass_nav_bar.dart';
 
 class TermsConditionsScreen extends StatelessWidget {
   const TermsConditionsScreen({super.key});
@@ -14,7 +13,6 @@ class TermsConditionsScreen extends StatelessWidget {
 
     return Scaffold(
       backgroundColor: AppColors.backgroundWhite,
-      extendBody: true,
       body: SafeArea(
         child: SingleChildScrollView(
           padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 16),
@@ -122,25 +120,9 @@ class TermsConditionsScreen extends StatelessWidget {
               const SizedBox(height: 6),
               _buildBodyText(
                   l10n?.termsSection10Text ?? 'Los presentes Términos y Condiciones se regirán e interpretarán de acuerdo con la legislación vigente. Para cualquier controversia que pudiera derivarse del uso de la aplicación, las partes se someterán a los juzgados y tribunales competentes.'),
-              const SizedBox(height: 90),
             ],
           ),
         ),
-      ),
-      bottomNavigationBar: LiquidGlassNavBar(
-        currentIndex: 2,
-        onTap: (index) {
-          if (index == 0 || index == 1) {
-            context.go('/home');
-          } else {
-            context.pop();
-          }
-        },
-        items: [
-          NavSpec(Icons.home_outlined, Icons.home, l10n?.tabHome ?? 'Inicio'),
-          NavSpec(Icons.calendar_today_outlined, Icons.calendar_today, l10n?.tabReservations ?? 'Reserva'),
-          NavSpec(Icons.account_circle_outlined, Icons.account_circle, l10n?.tabProfile ?? 'Perfil'),
-        ],
       ),
     );
   }

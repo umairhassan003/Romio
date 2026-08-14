@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:go_router/go_router.dart';
 import 'package:provider/provider.dart';
 import '../../../../core/theme/app_colors.dart';
 import '../../../../core/theme/app_text_styles.dart';
@@ -18,18 +19,47 @@ class LanguageScreen extends StatelessWidget {
 
     return Scaffold(
       backgroundColor: AppColors.backgroundWhite,
-      appBar: AppBar(
-        title: Text(l10n?.profileLanguageTitle ?? 'Idioma', style: AppTextStyles.headingS),
-        backgroundColor: Colors.transparent, elevation: 0,
-        iconTheme: const IconThemeData(color: AppColors.primaryBurgundy),
-      ),
-      body: Padding(
-        padding: const EdgeInsets.all(24),
-        child: Column(children: [
-          _langOption(context, localeProvider, profileProvider, 'es', 'Español', selected == 'es'),
-          const SizedBox(height: 16),
-          _langOption(context, localeProvider, profileProvider, 'en', 'English', selected == 'en'),
-        ]),
+      body: SafeArea(
+        child: Padding(
+          padding: const EdgeInsets.fromLTRB(24, 24, 24, 24),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Row(
+                children: [
+                  GestureDetector(
+                    onTap: () => context.pop(),
+                    child: Container(
+                      width: 44,
+                      height: 44,
+                      decoration: const BoxDecoration(
+                        color: Color(0xFFF2F2F2),
+                        shape: BoxShape.circle,
+                      ),
+                      child: const Icon(
+                        Icons.arrow_back,
+                        color: AppColors.primaryBurgundy,
+                        size: 20,
+                      ),
+                    ),
+                  ),
+                  const Spacer(),
+                ],
+              ),
+              const SizedBox(height: 12),
+              Center(
+                child: Text(
+                  l10n?.profileLanguageTitle ?? 'Idioma',
+                  style: AppTextStyles.headingL,
+                ),
+              ),
+              const SizedBox(height: 32),
+              _langOption(context, localeProvider, profileProvider, 'es', 'Español', selected == 'es'),
+              const SizedBox(height: 16),
+              _langOption(context, localeProvider, profileProvider, 'en', 'Inglés', selected == 'en'),
+            ],
+          ),
+        ),
       ),
     );
   }

@@ -2,7 +2,6 @@ import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import 'package:go_router/go_router.dart';
 import 'package:flutter_gen/gen_l10n/app_localizations.dart';
-import 'package:intl/intl.dart';
 
 import '../../../../core/theme/app_colors.dart';
 import '../../../../core/theme/app_text_styles.dart';
@@ -11,6 +10,7 @@ import '../../reservation/providers/reservation_flow_provider.dart';
 import '../../profile/providers/profile_provider.dart';
 import '../../../widgets/image_carousel.dart';
 import '../../../widgets/amenities_grid.dart';
+import '../../../widgets/app_calendar.dart';
 import '../../../../domain/models/room.dart';
 import '../../../../domain/models/amenity.dart';
 
@@ -117,30 +117,24 @@ class _RoomDetailScreenState extends State<RoomDetailScreen> {
     ];
   }
 
+  static const _esMonthsShort = [
+    'Ene', 'Feb', 'Mar', 'Abr', 'May', 'Jun',
+    'Jul', 'Ago', 'Sep', 'Oct', 'Nov', 'Dic',
+  ];
+
+  String _formatDate(DateTime d) =>
+      '${d.day} ${_esMonthsShort[d.month - 1]} ${d.year}';
+
+  /// Opens the shared calendar as a popup (same rules as the booking flow).
   Future<void> _selectDate(
     BuildContext context,
     ReservationFlowProvider provider,
   ) async {
-    final DateTime? picked = await showDatePicker(
+    final picked = await showAppDatePicker(
       context: context,
-      initialDate:
-          provider.selectedDate.isBefore(DateTime.now())
-              ? DateTime.now()
-              : provider.selectedDate,
       firstDate: DateTime.now(),
       lastDate: DateTime.now().add(const Duration(days: 365)),
-      builder: (context, child) {
-        return Theme(
-          data: Theme.of(context).copyWith(
-            colorScheme: const ColorScheme.light(
-              primary: AppColors.primaryBurgundy,
-              onPrimary: Colors.white,
-              onSurface: AppColors.textPrimary,
-            ),
-          ),
-          child: child!,
-        );
-      },
+      initialDate: provider.selectedDate,
     );
     if (picked != null) {
       provider.setDate(picked);
@@ -304,7 +298,6 @@ class _RoomDetailScreenState extends State<RoomDetailScreen> {
                       child: ImageCarousel(
                         imageUrls: _imageUrls(room),
                         placeholderIcon: Icons.bed,
-                        caption: room.name,
                       ),
                     ),
                   ),
@@ -371,7 +364,7 @@ class _RoomDetailScreenState extends State<RoomDetailScreen> {
                 height: 48,
               ),
 
-              // 5. Date Selection Selector Row
+              // 5. Date Selection — tap to open the shared calendar popup
               Row(
                 mainAxisAlignment: MainAxisAlignment.spaceBetween,
                 children: [
@@ -402,10 +395,7 @@ class _RoomDetailScreenState extends State<RoomDetailScreen> {
                           ),
                           const SizedBox(width: 8),
                           Text(
-                            DateFormat(
-                              'd MMM',
-                              l10n?.localeName ?? 'es',
-                            ).format(provider.selectedDate),
+                            _formatDate(provider.selectedDate),
                             style: AppTextStyles.labelM.copyWith(
                               color: AppColors.primaryBurgundy,
                             ),
@@ -665,7 +655,7 @@ class _RoomDetailScreenState extends State<RoomDetailScreen> {
             ),
             const SizedBox(width: 12),
             Text(
-              l10n?.faqTitle ?? 'Preguntas frecuentes',
+              l10n?.profileFaq ?? 'Preguntas frecuentes',
               style: AppTextStyles.labelM.copyWith(
                 color: AppColors.textPrimary,
                 fontWeight: FontWeight.bold,

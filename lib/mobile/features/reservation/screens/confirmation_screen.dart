@@ -26,97 +26,143 @@ class ConfirmationScreen extends StatelessWidget {
         child: Padding(
           padding: const EdgeInsets.all(24),
           child: Column(
-            mainAxisAlignment: MainAxisAlignment.center,
             crossAxisAlignment: CrossAxisAlignment.stretch,
             children: [
+              // Back button
+              Align(
+                alignment: Alignment.topLeft,
+                child: GestureDetector(
+                  onTap: () {
+                    provider.resetFlow();
+                    context.go('/home');
+                  },
+                  child: Container(
+                    width: 44,
+                    height: 44,
+                    decoration: const BoxDecoration(
+                      color: Color(0xFFF2F2F2),
+                      shape: BoxShape.circle,
+                    ),
+                    child: const Icon(
+                      Icons.arrow_back,
+                      color: AppColors.primaryBurgundy,
+                      size: 20,
+                    ),
+                  ),
+                ),
+              ),
               const Spacer(),
-              // Green check
-              Container(
-                width: 80, height: 80,
-                decoration: const BoxDecoration(color: AppColors.success, shape: BoxShape.circle),
-                child: const Icon(Icons.check, color: Colors.white, size: 48),
+
+              // Green check circle
+              Center(
+                child: Container(
+                  width: 88,
+                  height: 88,
+                  decoration: const BoxDecoration(
+                    color: AppColors.success,
+                    shape: BoxShape.circle,
+                  ),
+                  child: const Icon(Icons.check, color: Colors.white, size: 52),
+                ),
               ),
               const SizedBox(height: 24),
+
               Text(
                 l10n?.confirmationTitle ?? 'Reserva confirmada',
                 textAlign: TextAlign.center,
                 style: AppTextStyles.headingXL,
               ),
-              const SizedBox(height: 8),
-              Text(
-                l10n?.confirmationSubtitle ?? 'Tu espacio es seguro y privado.',
-                textAlign: TextAlign.center,
-                style: AppTextStyles.bodyM.copyWith(color: AppColors.textSecondary),
-              ),
-              if (reservation?.paymentProvider == 'pay_on_property') ...[
-                const SizedBox(height: 12),
-                Container(
-                  padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 10),
-                  decoration: BoxDecoration(
-                    color: AppColors.success.withValues(alpha: 0.12),
-                    borderRadius: BorderRadius.circular(12),
-                  ),
-                  child: Row(
-                    mainAxisSize: MainAxisSize.min,
-                    children: [
-                      const Icon(Icons.store_mall_directory_outlined, size: 16, color: AppColors.success),
-                      const SizedBox(width: 8),
-                      Flexible(
-                        child: Text(
-                          l10n?.confirmationPayOnProperty ?? 'Pagarás en la propiedad al llegar.',
-                          style: AppTextStyles.caption.copyWith(color: AppColors.success),
-                        ),
-                      ),
-                    ],
-                  ),
-                ),
-              ] else if (reservation?.paymentStatus == 'completed') ...[
-                const SizedBox(height: 12),
-                Container(
-                  padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 10),
-                  decoration: BoxDecoration(
-                    color: AppColors.success.withValues(alpha: 0.12),
-                    borderRadius: BorderRadius.circular(12),
-                  ),
-                  child: Row(
-                    mainAxisSize: MainAxisSize.min,
-                    children: [
-                      const Icon(Icons.check_circle_outline, size: 16, color: AppColors.success),
-                      const SizedBox(width: 8),
-                      Flexible(
-                        child: Text(
-                          l10n?.paymentStatusPaid ?? 'Pagado',
-                          style: AppTextStyles.caption.copyWith(color: AppColors.success),
-                        ),
-                      ),
-                    ],
-                  ),
-                ),
-              ],
+
               const SizedBox(height: 48),
 
               // Details card
               Container(
                 padding: const EdgeInsets.all(24),
                 decoration: BoxDecoration(
-                  color: AppColors.backgroundWhite, borderRadius: BorderRadius.circular(16),
-                  border: Border.all(color: AppColors.borderLight),
+                  color: AppColors.surfaceLight,
+                  borderRadius: BorderRadius.circular(16),
                 ),
-                child: Column(children: [
-                  _row(l10n?.confirmationIdLabel ?? 'Reservation ID', '#$code'),
-                  const Divider(height: 24, color: AppColors.borderLight),
-                  _row(l10n?.confirmationRoomLabel ?? 'Habitación', roomName),
-                  const SizedBox(height: 12),
-                  _row('Check In', checkIn),
-                  const SizedBox(height: 12),
-                  _row('Check Out', checkOut),
-                ]),
+                child: Column(
+                  children: [
+                    _row(
+                      'Reservation ID',
+                      '#${code.replaceAll('#', '')}',
+                      isId: true,
+                    ),
+                    const Divider(height: 24, color: AppColors.borderLight),
+                    _row(
+                      l10n?.confirmationRoomLabel ?? 'Habitación',
+                      roomName,
+                    ),
+                    const SizedBox(height: 12),
+                    _row('Check In', checkIn),
+                    const SizedBox(height: 12),
+                    _row('Check Out', checkOut),
+                  ],
+                ),
               ),
+              const SizedBox(height: 24),
+
+              // Notification banner
+              Container(
+                padding: const EdgeInsets.all(16),
+                decoration: BoxDecoration(
+                  color: AppColors.success.withValues(alpha: 0.08),
+                  borderRadius: BorderRadius.circular(12),
+                  border: Border.all(
+                    color: AppColors.success.withValues(alpha: 0.3),
+                  ),
+                ),
+                child: Row(
+                  children: [
+                    Container(
+                      width: 36,
+                      height: 36,
+                      decoration: const BoxDecoration(
+                        color: AppColors.success,
+                        shape: BoxShape.circle,
+                      ),
+                      child: const Icon(
+                        Icons.check,
+                        color: Colors.white,
+                        size: 20,
+                      ),
+                    ),
+                    const SizedBox(width: 12),
+                    Expanded(
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Text(
+                            l10n?.confirmationNotificationTitle ??
+                                'Reserva confirmada',
+                            style: AppTextStyles.labelM,
+                          ),
+                          Text(
+                            l10n?.confirmationNotificationBody ??
+                                'Tienes una reserva activa',
+                            style: AppTextStyles.bodyS.copyWith(
+                              color: AppColors.textSecondary,
+                            ),
+                          ),
+                        ],
+                      ),
+                    ),
+                    const Icon(
+                      Icons.close,
+                      size: 16,
+                      color: AppColors.textSecondary,
+                    ),
+                  ],
+                ),
+              ),
+
               const Spacer(),
 
-              // Go home button
+              // Primary button
               SizedBox(
-                width: double.infinity, height: 52,
+                width: double.infinity,
+                height: 52,
                 child: ElevatedButton(
                   onPressed: () {
                     provider.resetFlow();
@@ -124,11 +170,16 @@ class ConfirmationScreen extends StatelessWidget {
                   },
                   style: ElevatedButton.styleFrom(
                     backgroundColor: AppColors.primaryBurgundy,
-                    shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(28)),
+                    shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(28),
+                    ),
+                    elevation: 0,
                   ),
                   child: Text(
-                    l10n?.confirmationGoHome ?? 'Volver a la página de inicio',
-                    style: AppTextStyles.labelM.copyWith(color: AppColors.textOnPrimary),
+                    l10n?.confirmationViewReservation ?? 'Ver mi reservacion',
+                    style: AppTextStyles.labelM.copyWith(
+                      color: AppColors.textOnPrimary,
+                    ),
                   ),
                 ),
               ),
@@ -139,11 +190,19 @@ class ConfirmationScreen extends StatelessWidget {
     );
   }
 
-  Widget _row(String label, String value) => Row(
+  Widget _row(String label, String value, {bool isId = false}) => Row(
     mainAxisAlignment: MainAxisAlignment.spaceBetween,
     children: [
-      Text(label, style: AppTextStyles.bodyM.copyWith(color: AppColors.textSecondary)),
-      Text(value, style: AppTextStyles.labelM),
+      Text(
+        label,
+        style: AppTextStyles.bodyM.copyWith(color: AppColors.textSecondary),
+      ),
+      Text(
+        value,
+        style: AppTextStyles.labelM.copyWith(
+          color: isId ? AppColors.textSecondary : AppColors.textPrimary,
+        ),
+      ),
     ],
   );
 }

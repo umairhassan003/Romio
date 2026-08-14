@@ -35,7 +35,9 @@ class AppTheme {
         scrolledUnderElevation: 0,
         centerTitle: true,
         iconTheme: const IconThemeData(color: AppColors.primaryBurgundy),
-        titleTextStyle: AppTextStyles.headingM.copyWith(color: AppColors.primaryBurgundy),
+        titleTextStyle: AppTextStyles.headingM.copyWith(
+          color: AppColors.primaryBurgundy,
+        ),
         systemOverlayStyle: const SystemUiOverlayStyle(
           statusBarColor: Colors.transparent,
           statusBarIconBrightness: Brightness.dark,
@@ -48,8 +50,14 @@ class AppTheme {
         backgroundColor: AppColors.backgroundWhite,
         selectedItemColor: AppColors.primaryBurgundy,
         unselectedItemColor: AppColors.textSecondary,
-        selectedLabelStyle: TextStyle(fontSize: 12, fontWeight: FontWeight.w600),
-        unselectedLabelStyle: TextStyle(fontSize: 12, fontWeight: FontWeight.w400),
+        selectedLabelStyle: TextStyle(
+          fontSize: 12,
+          fontWeight: FontWeight.w600,
+        ),
+        unselectedLabelStyle: TextStyle(
+          fontSize: 12,
+          fontWeight: FontWeight.w400,
+        ),
         type: BottomNavigationBarType.fixed,
         elevation: 8,
       ),
@@ -60,8 +68,12 @@ class AppTheme {
           backgroundColor: AppColors.primaryBurgundy,
           foregroundColor: AppColors.textOnPrimary,
           padding: const EdgeInsets.symmetric(horizontal: 32, vertical: 16),
-          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(28)),
-          textStyle: AppTextStyles.labelM.copyWith(color: AppColors.textOnPrimary),
+          shape: RoundedRectangleBorder(
+            borderRadius: BorderRadius.circular(28),
+          ),
+          textStyle: AppTextStyles.labelM.copyWith(
+            color: AppColors.textOnPrimary,
+          ),
           elevation: 0,
         ),
       ),
@@ -71,18 +83,21 @@ class AppTheme {
         filled: true,
         fillColor: AppColors.backgroundWhite,
         border: OutlineInputBorder(
-          borderRadius: BorderRadius.circular(12),
-          borderSide: const BorderSide(color: AppColors.borderLight),
+          borderRadius: BorderRadius.circular(16),
+          borderSide: const BorderSide(color: AppColors.borderField),
         ),
         enabledBorder: OutlineInputBorder(
-          borderRadius: BorderRadius.circular(12),
-          borderSide: const BorderSide(color: AppColors.borderLight),
+          borderRadius: BorderRadius.circular(16),
+          borderSide: const BorderSide(color: AppColors.borderField),
         ),
         focusedBorder: OutlineInputBorder(
-          borderRadius: BorderRadius.circular(12),
-          borderSide: const BorderSide(color: AppColors.primaryBurgundy, width: 2),
+          borderRadius: BorderRadius.circular(16),
+          borderSide: const BorderSide(color: Color(0x80000000), width: 1.5),
         ),
-        contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
+        contentPadding: const EdgeInsets.symmetric(
+          horizontal: 16,
+          vertical: 14,
+        ),
       ),
 
       // Divider
@@ -94,11 +109,13 @@ class AppTheme {
       // Switch
       switchTheme: SwitchThemeData(
         thumbColor: WidgetStateProperty.resolveWith((states) {
-          if (states.contains(WidgetState.selected)) return AppColors.primaryBurgundy;
+          if (states.contains(WidgetState.selected))
+            return AppColors.primaryBurgundy;
           return AppColors.textSecondary;
         }),
         trackColor: WidgetStateProperty.resolveWith((states) {
-          if (states.contains(WidgetState.selected)) return AppColors.primaryBurgundyLight.withValues(alpha: 0.4);
+          if (states.contains(WidgetState.selected))
+            return AppColors.primaryBurgundyLight.withValues(alpha: 0.4);
           return AppColors.borderLight;
         }),
       ),
@@ -106,7 +123,9 @@ class AppTheme {
       // SnackBar — burgundy surface, white text, floating rounded.
       snackBarTheme: SnackBarThemeData(
         backgroundColor: AppColors.primaryBurgundy,
-        contentTextStyle: AppTextStyles.bodyM.copyWith(color: AppColors.textOnPrimary),
+        contentTextStyle: AppTextStyles.bodyM.copyWith(
+          color: AppColors.textOnPrimary,
+        ),
         actionTextColor: AppColors.backgroundPink,
         behavior: SnackBarBehavior.floating,
         shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),

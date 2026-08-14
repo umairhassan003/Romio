@@ -45,7 +45,14 @@ class SupabaseProfileRepository implements ProfileRepository {
         .insert(profile.toJson())
         .select()
         .single();
-        
+
     return Profile.fromJson(response);
+  }
+
+  @override
+  Future<void> deleteAccount() async {
+    // Runs the SECURITY DEFINER `delete_current_user()` function, which removes
+    // the caller's payments, reservations, profile and auth.users row.
+    await _supabaseClient.rpc('delete_current_user');
   }
 }

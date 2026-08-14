@@ -16,6 +16,7 @@ class AppColors {
   static const Color textOnPrimary = Color(0xFFFFFFFF);
 
   static const Color borderLight = Color(0xFFE8D5DE);
+  static const Color borderField = Color(0xFFE0E0E0);
   static const Color starRating = Color(0xFFE8A020);
 
   static const Color success = Color(0xFF4CAF50);

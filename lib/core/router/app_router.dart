@@ -1,4 +1,3 @@
-
 import 'package:go_router/go_router.dart';
 
 import '../../mobile/features/onboarding/screens/splash_screen.dart';
@@ -25,27 +24,17 @@ import '../../mobile/features/offline/screens/offline_state_screen.dart';
 
 import '../../mobile/widgets/main_tab_shell.dart';
 
-
 final appRouter = GoRouter(
   initialLocation: '/',
   routes: [
     // ── Pre-auth routes ──────────────────────────────────────────
-    GoRoute(
-      path: '/',
-      builder: (context, state) => const SplashScreen(),
-    ),
+    GoRoute(path: '/', builder: (context, state) => const SplashScreen()),
     GoRoute(
       path: '/onboarding',
       builder: (context, state) => const OnboardingScreen(),
     ),
-    GoRoute(
-      path: '/login',
-      builder: (context, state) => const LoginScreen(),
-    ),
-    GoRoute(
-      path: '/signup',
-      builder: (context, state) => const SignupScreen(),
-    ),
+    GoRoute(path: '/login', builder: (context, state) => const LoginScreen()),
+    GoRoute(path: '/signup', builder: (context, state) => const SignupScreen()),
     GoRoute(
       path: '/forgot-password',
       builder: (context, state) => const ForgotPasswordScreen(),
@@ -63,30 +52,28 @@ final appRouter = GoRouter(
     ),
 
     // ── Main tab shell (Home / Reservations / Profile) ───────────
-    GoRoute(
-      path: '/home',
-      builder: (context, state) => const MainTabShell(),
-    ),
+    GoRoute(path: '/home', builder: (context, state) => const MainTabShell()),
 
     // ── Detail / flow screens (pushed on top of tabs) ────────────
     GoRoute(
       path: '/hotel/:hotelId',
-      builder: (context, state) => HotelDetailScreen(
-        hotelId: state.pathParameters['hotelId']!,
-      ),
+      builder:
+          (context, state) =>
+              HotelDetailScreen(hotelId: state.pathParameters['hotelId']!),
     ),
     GoRoute(
       path: '/hotel/:hotelId/room/:roomId',
-      builder: (context, state) => RoomDetailScreen(
-        hotelId: state.pathParameters['hotelId']!,
-        roomId: state.pathParameters['roomId']!,
-      ),
+      builder:
+          (context, state) => RoomDetailScreen(
+            hotelId: state.pathParameters['hotelId']!,
+            roomId: state.pathParameters['roomId']!,
+          ),
     ),
     GoRoute(
       path: '/reservation/:roomId',
-      builder: (context, state) => ReservationScreen(
-        roomId: state.pathParameters['roomId']!,
-      ),
+      builder:
+          (context, state) =>
+              ReservationScreen(roomId: state.pathParameters['roomId']!),
     ),
     GoRoute(
       path: '/payment',
@@ -130,8 +117,6 @@ final appRouter = GoRouter(
       path: '/profile/privacy-policy',
       builder: (context, state) => const PrivacyPolicyScreen(),
     ),
-
-
 
     // ── Offline ──────────────────────────────────────────────────
     GoRoute(

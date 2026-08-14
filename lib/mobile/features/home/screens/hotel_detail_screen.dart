@@ -87,7 +87,6 @@ class _HotelDetailScreenState extends State<HotelDetailScreen> {
                       child: ImageCarousel(
                         imageUrls: _imageUrls(hotel),
                         placeholderIcon: Icons.hotel,
-                        caption: hotel.name,
                       ),
                     ),
                   ),

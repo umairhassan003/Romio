@@ -18,7 +18,11 @@ class VerifyOtpScreen extends StatefulWidget {
 }
 
 class _VerifyOtpScreenState extends State<VerifyOtpScreen> {
-  final _codeController = TextEditingController();
+  final List<TextEditingController> _controllers = List.generate(
+    8,
+    (_) => TextEditingController(),
+  );
+  final List<FocusNode> _focusNodes = List.generate(8, (_) => FocusNode());
 
   @override
   void initState() {
@@ -32,19 +36,27 @@ class _VerifyOtpScreenState extends State<VerifyOtpScreen> {
 
   @override
   void dispose() {
-    _codeController.dispose();
+    for (final c in _controllers) {
+      c.dispose();
+    }
+    for (final f in _focusNodes) {
+      f.dispose();
+    }
     super.dispose();
   }
 
+  String get _code => _controllers.map((c) => c.text).join();
+
   Future<void> _verify() async {
     final l10n = AppLocalizations.of(context);
-    final code = _codeController.text.trim();
+    final code = _code.trim();
 
-    if (code.isEmpty) {
+    if (code.length < 8) {
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
           content: Text(
-            l10n?.verifyOtpRequired ?? 'Por favor ingresa el código de verificación',
+            l10n?.verifyOtpRequired ??
+                'Por favor ingresa el código de verificación',
           ),
         ),
       );
@@ -60,16 +72,16 @@ class _VerifyOtpScreenState extends State<VerifyOtpScreen> {
     } on AuthException catch (e) {
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-            content: Text(_otpErrorMessage(l10n, e.message)),
-          ),
+          SnackBar(content: Text(_otpErrorMessage(l10n, e.message))),
         );
       }
     } catch (e) {
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
-            content: Text(l10n?.verifyOtpInvalid ?? 'Código inválido o expirado'),
+            content: Text(
+              l10n?.verifyOtpInvalid ?? 'Código inválido o expirado',
+            ),
           ),
         );
       }
@@ -79,7 +91,8 @@ class _VerifyOtpScreenState extends State<VerifyOtpScreen> {
   String _otpErrorMessage(AppLocalizations? l10n, String? message) {
     final normalized = message?.toLowerCase() ?? '';
     if (normalized.contains('expired')) {
-      return l10n?.verifyOtpExpired ?? 'El código ha expirado. Solicita uno nuevo.';
+      return l10n?.verifyOtpExpired ??
+          'El código ha expirado. Solicita uno nuevo.';
     }
     return l10n?.verifyOtpInvalid ?? 'Código inválido o expirado';
   }
@@ -111,6 +124,22 @@ class _VerifyOtpScreenState extends State<VerifyOtpScreen> {
     }
   }
 
+  void _onDigitEntered(int index, String value) {
+    if (value.isNotEmpty && index < 7) {
+      _focusNodes[index + 1].requestFocus();
+    }
+    setState(() {});
+  }
+
+  void _onKeyEvent(int index, KeyEvent event) {
+    if (event is KeyDownEvent &&
+        event.logicalKey == LogicalKeyboardKey.backspace &&
+        _controllers[index].text.isEmpty &&
+        index > 0) {
+      _focusNodes[index - 1].requestFocus();
+    }
+  }
+
   @override
   Widget build(BuildContext context) {
     final l10n = AppLocalizations.of(context);
@@ -118,89 +147,157 @@ class _VerifyOtpScreenState extends State<VerifyOtpScreen> {
 
     return Scaffold(
       backgroundColor: AppColors.backgroundWhite,
-      appBar: AppBar(
-        title: Text(
-          l10n?.verifyOtpTitle ?? 'Código de verificación',
-          style: AppTextStyles.headingM,
-        ),
-        backgroundColor: Colors.transparent,
-        elevation: 0,
-        iconTheme: const IconThemeData(color: AppColors.primaryBurgundy),
-      ),
-      body: Padding(
-        padding: const EdgeInsets.all(24.0),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.stretch,
-          children: [
-            Text(
-              l10n?.verifyOtpSubtitle(widget.email) ??
-                  'Ingresa el código de verificación que enviamos a ${widget.email}.',
-              style: AppTextStyles.bodyM,
-            ),
-            const SizedBox(height: 32),
-            TextField(
-              controller: _codeController,
-              keyboardType: TextInputType.number,
-              textAlign: TextAlign.center,
-              style: AppTextStyles.headingL,
-              inputFormatters: [FilteringTextInputFormatter.digitsOnly],
-              decoration: InputDecoration(
-                hintText: l10n?.verifyOtpHint ?? 'Código de verificación',
-                counterText: '',
-                border: OutlineInputBorder(
-                  borderRadius: BorderRadius.circular(12),
-                  borderSide: const BorderSide(color: AppColors.borderLight),
-                ),
-                filled: true,
-                fillColor: AppColors.backgroundWhite,
-              ),
-              onSubmitted: (_) => _verify(),
-            ),
-            const SizedBox(height: 32),
-            SizedBox(
-              height: 56,
-              child: ElevatedButton(
-                style: ElevatedButton.styleFrom(
-                  backgroundColor: AppColors.primaryBurgundy,
-                  shape: RoundedRectangleBorder(
-                    borderRadius: BorderRadius.circular(28),
+      body: SafeArea(
+        child: Padding(
+          padding: const EdgeInsets.fromLTRB(24, 24, 24, 0),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              // Back button
+              GestureDetector(
+                onTap: () => context.pop(),
+                child: Container(
+                  width: 44,
+                  height: 44,
+                  decoration: const BoxDecoration(
+                    color: Color(0xFFF2F2F2),
+                    shape: BoxShape.circle,
+                  ),
+                  child: const Icon(
+                    Icons.arrow_back,
+                    color: AppColors.primaryBurgundy,
+                    size: 20,
                   ),
                 ),
-                onPressed: auth.isLoading ? null : _verify,
-                child: auth.isLoading
-                    ? const CircularProgressIndicator(
-                        color: AppColors.textOnPrimary,
-                      )
-                    : Text(
-                        l10n?.verifyOtpValidate ?? 'Validar',
-                        style: AppTextStyles.labelM.copyWith(
-                          color: AppColors.textOnPrimary,
+              ),
+              const SizedBox(height: 24),
+
+              Text(
+                l10n?.verifyOtpTitle ?? 'Código de verificación',
+                style: AppTextStyles.headingXL.copyWith(
+                  color: AppColors.textPrimary,
+                ),
+              ),
+              const SizedBox(height: 32),
+
+              // 8-digit boxes — SizedBox gaps between Expanded children so
+              // every box receives exactly the same width.
+              Row(
+                children: [
+                  for (int i = 0; i < 8; i++) ...[
+                    if (i > 0) const SizedBox(width: 5),
+                    Expanded(
+                      child: SizedBox(
+                        height: 48,
+                        child: KeyboardListener(
+                          focusNode: FocusNode(),
+                          onKeyEvent: (e) => _onKeyEvent(i, e),
+                          child: TextField(
+                            controller: _controllers[i],
+                            focusNode: _focusNodes[i],
+                            textAlign: TextAlign.center,
+                            keyboardType: TextInputType.number,
+                            maxLength: 1,
+                            inputFormatters: [
+                              FilteringTextInputFormatter.digitsOnly,
+                            ],
+                            style: AppTextStyles.headingS,
+                            decoration: InputDecoration(
+                              counterText: '',
+                              isDense: true,
+                              contentPadding: const EdgeInsets.symmetric(
+                                vertical: 12,
+                              ),
+                              enabledBorder: OutlineInputBorder(
+                                borderRadius: BorderRadius.circular(16),
+                                borderSide: const BorderSide(
+                                  color: Colors.black,
+                                  width: 1,
+                                ),
+                              ),
+                              focusedBorder: OutlineInputBorder(
+                                borderRadius: BorderRadius.circular(16),
+                                borderSide: const BorderSide(
+                                  color: Colors.black,
+                                  width: 1,
+                                ),
+                              ),
+                              border: OutlineInputBorder(
+                                borderRadius: BorderRadius.circular(16),
+                                borderSide: const BorderSide(
+                                  color: Colors.black,
+                                  width: 1,
+                                ),
+                              ),
+                            ),
+                            onChanged: (v) => _onDigitEntered(i, v),
+                          ),
                         ),
                       ),
+                    ),
+                  ],
+                ],
               ),
-            ),
-            const SizedBox(height: 24),
-            Row(
-              mainAxisAlignment: MainAxisAlignment.center,
-              children: [
-                Text(
-                  l10n?.verifyOtpResendPrompt ?? '¿No recibiste el código? ',
-                  style: AppTextStyles.bodyM,
+              const SizedBox(height: 16),
+
+              Text(
+                l10n?.verifyOtpSubtitleSimple ??
+                    'Introduce el código de verificación para confirmar tu identificación.',
+                style: AppTextStyles.bodyS.copyWith(
+                  color: AppColors.textSecondary,
                 ),
-                GestureDetector(
-                  onTap: auth.isLoading ? null : _resend,
-                  child: Text(
-                    l10n?.verifyOtpResend ?? 'Reenviar',
-                    style: AppTextStyles.labelM.copyWith(
-                      color: AppColors.primaryBurgundy,
-                      decoration: TextDecoration.underline,
-                      decorationColor: AppColors.primaryBurgundy,
+              ),
+              const SizedBox(height: 32),
+
+              SizedBox(
+                width: double.infinity,
+                height: 56,
+                child: ElevatedButton(
+                  style: ElevatedButton.styleFrom(
+                    backgroundColor: AppColors.primaryBurgundy,
+                    shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(28),
+                    ),
+                    elevation: 0,
+                  ),
+                  onPressed: auth.isLoading ? null : _verify,
+                  child:
+                      auth.isLoading
+                          ? const CircularProgressIndicator(
+                            color: AppColors.textOnPrimary,
+                          )
+                          : Text(
+                            l10n?.verifyOtpValidate ?? 'Enviar código',
+                            style: AppTextStyles.labelM.copyWith(
+                              color: AppColors.textOnPrimary,
+                            ),
+                          ),
+                ),
+              ),
+              const SizedBox(height: 24),
+
+              Row(
+                mainAxisAlignment: MainAxisAlignment.center,
+                children: [
+                  Text(
+                    l10n?.verifyOtpResendPrompt ?? '¿No recibiste el código? ',
+                    style: AppTextStyles.bodyM,
+                  ),
+                  GestureDetector(
+                    onTap: auth.isLoading ? null : _resend,
+                    child: Text(
+                      l10n?.verifyOtpResend ?? 'Reenviar',
+                      style: AppTextStyles.labelM.copyWith(
+                        color: AppColors.primaryBurgundy,
+                        decoration: TextDecoration.underline,
+                        decorationColor: AppColors.primaryBurgundy,
+                      ),
                     ),
                   ),
-                ),
-              ],
-            ),
-          ],
+                ],
+              ),
+            ],
+          ),
         ),
       ),
     );
