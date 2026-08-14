@@ -24,7 +24,7 @@ class PaymentConstants {
 
   /// Flip to `true` once the `paypal-charge` Edge Function is deployed and its
   /// secrets are set. When `false`, no real charge is made (record-only).
-  static const bool liveChargingEnabled = false;
+  static const bool liveChargingEnabled = true;
 
   /// Name of the Supabase Edge Function that performs PayPal charges.
   static const String paymentFunctionName = 'paypal-charge';

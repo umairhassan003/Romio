@@ -8,6 +8,7 @@ import 'package:go_router/go_router.dart';
 import 'package:flutter_gen/gen_l10n/app_localizations.dart';
 import '../providers/reservation_flow_provider.dart';
 import '../../profile/providers/profile_provider.dart';
+import '../../auth/providers/auth_provider.dart';
 import '../widgets/card_payment_form.dart';
 import '../widgets/paypal_approval_screen.dart';
 
@@ -175,6 +176,16 @@ class _PaymentScreenState extends State<PaymentScreen> {
       return;
     }
 
+    // Recipient of the confirmation email: the signed-in user's email, plus a
+    // display name assembled from the profile.
+    final profile = profileProvider.profile;
+    final clientEmail = context.read<AuthProvider>().user?.email ?? '';
+    final clientName = [profile?.firstName, profile?.lastName]
+        .whereType<String>()
+        .where((s) => s.trim().isNotEmpty)
+        .join(' ')
+        .trim();
+
     CardDetails? card;
     if (provider.selectedPaymentMethod == PaymentMethodType.card.providerKey) {
       if (!(_formKey.currentState?.validate() ?? false)) return;
@@ -188,6 +199,8 @@ class _PaymentScreenState extends State<PaymentScreen> {
 
     final success = await provider.confirmAndPay(
       profileId,
+      clientEmail: clientEmail,
+      clientName: clientName,
       card: card,
       onApprovalRequired: (approvalUrl) => _openPaypalApproval(context, approvalUrl),
     );

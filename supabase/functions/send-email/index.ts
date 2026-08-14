@@ -1,25 +1,9 @@
 // @ts-nocheck — runs in Supabase's Deno runtime, not the editor's Node TS
 // server. The `Deno` global and remote imports resolve at deploy time.
 /// <reference lib="deno.ns" />
+
 import "jsr:@supabase/functions-js/edge-runtime.d.ts";
 import { SmtpClient } from "https://deno.land/x/smtp@v0.7.0/mod.ts";
-
-// Supabase Edge Function: send-email
-//
-// Sends transactional emails (reservation notifications) via SMTP.
-// Called from the Flutter app after a booking is created.
-//
-// Secrets required (set with `supabase secrets set ...`):
-//   SMTP_HOST     - e.g. smtp.porkbun.app
-//   SMTP_PORT     - e.g. 587
-//   SMTP_EMAIL    - e.g. info@getromio.app
-//   SMTP_PASSWORD - the SMTP password
-//
-// ── Payload ──
-// POST { type, to, data }
-//   type: "reservation_hotel" | "reservation_client"
-//   to: recipient email address
-//   data: reservation details object
 
 const SMTP_HOST = Deno.env.get("SMTP_HOST") ?? "smtp.porkbun.app";
 const SMTP_PORT = parseInt(Deno.env.get("SMTP_PORT") ?? "587", 10);
@@ -46,6 +30,8 @@ const BRAND_LIGHT = "#F2DBE6";
 const BRAND_BG = "#FFFFFF";
 const BRAND_TEXT = "#1A1A1A";
 const BRAND_SECONDARY = "#6B6B6B";
+
+const LOGO_URL = "https://hjpxiekxyuovzqaffmen.supabase.co/storage/v1/object/public/romio/logo.svg";
 
 // ─── Email wrapper ──────────────────────────────────────────────────
 function wrapHtml(bodyContent: string): string {
@@ -80,7 +66,7 @@ function wrapHtml(bodyContent: string): string {
 <body>
   <div class="container">
     <div class="header">
-      <h1>ROMIO</h1>
+      <img src="${LOGO_URL}" alt="Romio" width="160" height="48" />
     </div>
     <div class="content">
       ${bodyContent}

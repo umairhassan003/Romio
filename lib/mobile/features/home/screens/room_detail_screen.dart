@@ -49,6 +49,8 @@ class _RoomDetailScreenState extends State<RoomDetailScreen> {
         roomId: room.id,
         roomName: room.name,
         hotelName: hotel?.name ?? '',
+        hotelAddress: hotel?.address,
+        roomImageUrl: room.coverImageUrl,
         price3h: room.price3h,
         price6h: room.price6h,
         price24h: room.price24h,

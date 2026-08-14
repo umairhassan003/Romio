@@ -1,6 +1,9 @@
+import 'dart:async';
 import 'dart:math';
 import 'package:flutter/foundation.dart';
 import '../../../../core/constants/payment_constants.dart';
+import '../../../../core/constants/notification_constants.dart';
+import '../../../../data/services/email_service.dart';
 import '../../../../domain/models/reservation.dart';
 import '../../../../domain/models/payment.dart';
 import '../../../../domain/gateways/payment_gateway.dart';
@@ -11,6 +14,7 @@ class ReservationFlowProvider extends ChangeNotifier {
   final ReservationRepository _reservationRepository;
   final PaymentRepository _paymentRepository;
   final PaymentGateway _paymentGateway;
+  final EmailService _emailService;
 
   static const List<String> _allTimes = [
     '14:00',
@@ -28,6 +32,8 @@ class ReservationFlowProvider extends ChangeNotifier {
   String? _selectedRoomId;
   String? _roomName;
   String? _hotelName;
+  String? _hotelAddress;
+  String? _roomImageUrl;
   double? _price3h;
   double? _price6h;
   double? _price24h;
@@ -47,9 +53,11 @@ class ReservationFlowProvider extends ChangeNotifier {
     required ReservationRepository reservationRepository,
     required PaymentRepository paymentRepository,
     required PaymentGateway paymentGateway,
+    required EmailService emailService,
   }) : _reservationRepository = reservationRepository,
        _paymentRepository = paymentRepository,
-       _paymentGateway = paymentGateway;
+       _paymentGateway = paymentGateway,
+       _emailService = emailService;
 
   // Getters
   String? get selectedRoomId => _selectedRoomId;
@@ -110,6 +118,8 @@ class ReservationFlowProvider extends ChangeNotifier {
     required String roomId,
     required String roomName,
     required String hotelName,
+    String? hotelAddress,
+    String? roomImageUrl,
     double? price3h,
     double? price6h,
     double? price24h,
@@ -119,6 +129,8 @@ class ReservationFlowProvider extends ChangeNotifier {
     _selectedRoomId = roomId;
     _roomName = roomName;
     _hotelName = hotelName;
+    _hotelAddress = hotelAddress;
+    _roomImageUrl = roomImageUrl;
     _price3h = price3h;
     _price6h = price6h;
     _price24h = price24h;
@@ -166,6 +178,8 @@ class ReservationFlowProvider extends ChangeNotifier {
 
   Future<bool> confirmAndPay(
     String profileId, {
+    required String clientEmail,
+    required String clientName,
     CardDetails? card,
     PayPalApprovalCallback? onApprovalRequired,
   }) async {
@@ -202,6 +216,8 @@ class ReservationFlowProvider extends ChangeNotifier {
         paymentStatus: result.status,
         providerReference: result.providerReference,
         paidAt: result.status == 'completed' ? DateTime.now() : null,
+        clientEmail: clientEmail,
+        clientName: clientName,
       );
 
       return true;
@@ -249,6 +265,8 @@ class ReservationFlowProvider extends ChangeNotifier {
     required String paymentStatus,
     String? providerReference,
     DateTime? paidAt,
+    String clientEmail = '',
+    String clientName = '',
   }) async {
     final now = DateTime.now();
 
@@ -291,12 +309,75 @@ class ReservationFlowProvider extends ChangeNotifier {
       paymentStatus: paymentStatus,
       paidAt: paidAt,
     );
+
+    // Only a completed (paid) booking triggers the confirmation emails — the
+    // guest is told "payment confirmed", so pending / pay-on-property bookings
+    // are intentionally excluded here.
+    if (paymentStatus == 'completed') {
+      _sendConfirmationEmails(
+        code: code,
+        clientEmail: clientEmail,
+        clientName: clientName,
+      );
+    }
+  }
+
+  /// Fires the guest confirmation and hotel notification emails after a paid
+  /// booking. Non-blocking on purpose: the sends are never awaited and
+  /// [EmailService] swallows its own errors, so a mail failure can never affect
+  /// the booking result or delay navigation to the confirmation screen.
+  void _sendConfirmationEmails({
+    required String code,
+    required String clientEmail,
+    required String clientName,
+  }) {
+    final date = _formatDate(_selectedDate);
+    final displayName = clientName.trim().isNotEmpty ? clientName.trim() : clientEmail;
+
+    if (clientEmail.isNotEmpty) {
+      unawaited(
+        _emailService.sendReservationToClient(
+          clientEmail: clientEmail,
+          reservationCode: code,
+          clientName: displayName,
+          hotelName: _hotelName ?? '',
+          hotelAddress: _hotelAddress ?? '',
+          roomName: _roomName ?? '',
+          date: date,
+          checkIn: _selectedTime,
+          checkOut: checkOutTime,
+          totalPrice: totalPrice.toStringAsFixed(2),
+          roomImageUrl: _roomImageUrl,
+        ),
+      );
+    }
+
+    unawaited(
+      _emailService.sendReservationToHotel(
+        hotelEmail: NotificationConstants.hotelNotificationEmail,
+        reservationCode: code,
+        clientName: displayName,
+        roomName: _roomName ?? '',
+        date: date,
+        checkIn: _selectedTime,
+        checkOut: checkOutTime,
+      ),
+    );
+  }
+
+  /// Formats a booking date as dd/MM/yyyy for the notification emails.
+  String _formatDate(DateTime d) {
+    final dd = d.day.toString().padLeft(2, '0');
+    final mm = d.month.toString().padLeft(2, '0');
+    return '$dd/$mm/${d.year}';
   }
 
   void resetFlow() {
     _selectedRoomId = null;
     _roomName = null;
     _hotelName = null;
+    _hotelAddress = null;
+    _roomImageUrl = null;
     _price3h = null;
     _price6h = null;
     _price24h = null;
