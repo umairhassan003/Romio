@@ -3,6 +3,7 @@ import '../../../../core/theme/app_colors.dart';
 import '../../../../core/theme/app_text_styles.dart';
 import 'package:go_router/go_router.dart';
 import 'package:flutter_gen/gen_l10n/app_localizations.dart';
+import '../../../../core/utils/onboarding_prefs.dart';
 
 class OnboardingScreen extends StatefulWidget {
   const OnboardingScreen({super.key});
@@ -19,6 +20,13 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
   void dispose() {
     _pageController.dispose();
     super.dispose();
+  }
+
+  /// Records that onboarding has been seen so it won't show again, then
+  /// continues to login.
+  Future<void> _finishOnboarding() async {
+    await OnboardingPrefs.markSeen();
+    if (mounted) context.go('/login');
   }
 
   @override
@@ -51,7 +59,7 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
                 l10n?.onboardingSubtitle2 ??
                 'Explora una amplia selección de hoteles, compara diferentes opciones y organiza tu próxima estancia de forma rápida, cómoda y sencilla.',
             buttonLabel: l10n?.onboardingStart ?? 'Empezar',
-            onButtonPressed: () => context.go('/login'),
+            onButtonPressed: _finishOnboarding,
           ),
         ],
       ),

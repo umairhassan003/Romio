@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 import 'package:romio/core/theme/app_colors.dart';
+import 'package:romio/core/utils/onboarding_prefs.dart';
 import 'package:flutter_svg/flutter_svg.dart';
 import 'package:video_player/video_player.dart';
 
@@ -32,21 +33,24 @@ class _SplashScreenState extends State<SplashScreen> {
 
   void _onVideoProgress() {
     if (_videoController.value.position >= _videoController.value.duration) {
-      _goToOnboarding();
+      _goToNext();
     }
   }
 
   void _goToOnboardingAfterFallback() {
     Future<void>.delayed(const Duration(seconds: 5), () {
-      _goToOnboarding();
+      _goToNext();
     });
   }
 
-  void _goToOnboarding() {
+  /// Show onboarding only on the first launch; afterwards go straight to login.
+  Future<void> _goToNext() async {
     if (!mounted || _hasNavigated) return;
     _hasNavigated = true;
     _videoController.removeListener(_onVideoProgress);
-    context.go('/onboarding');
+    final seen = await OnboardingPrefs.hasSeen();
+    if (!mounted) return;
+    context.go(seen ? '/login' : '/onboarding');
   }
 
   @override
