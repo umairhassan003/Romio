@@ -272,25 +272,44 @@ class _AppCalendarState extends State<AppCalendar> {
   }
 }
 
-/// Shows [AppCalendar] in a modal dialog and resolves with the picked date
-/// (or `null` if dismissed). Selecting a day closes the dialog immediately.
+/// Shows [AppCalendar] as a modal bottom sheet that slides up from the bottom
+/// and resolves with the picked date (or `null` if dismissed). Selecting a day
+/// closes the sheet immediately.
 Future<DateTime?> showAppDatePicker({
   required BuildContext context,
   required DateTime firstDate,
   required DateTime lastDate,
   DateTime? initialDate,
 }) {
-  return showDialog<DateTime>(
+  return showModalBottomSheet<DateTime>(
     context: context,
-    builder: (ctx) => Dialog(
-      backgroundColor: Colors.transparent,
-      insetPadding: const EdgeInsets.symmetric(horizontal: 24),
-      child: AppCalendar(
-        firstDate: firstDate,
-        lastDate: lastDate,
-        selectedDate: initialDate,
-        initialMonth: initialDate ?? lastDate,
-        onDateSelected: (date) => Navigator.of(ctx).pop(date),
+    isScrollControlled: true,
+    backgroundColor: Colors.transparent,
+    builder: (ctx) => SafeArea(
+      child: Padding(
+        padding: const EdgeInsets.fromLTRB(16, 12, 16, 16),
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            // Drag handle
+            Container(
+              width: 40,
+              height: 4,
+              decoration: BoxDecoration(
+                color: AppColors.borderField,
+                borderRadius: BorderRadius.circular(2),
+              ),
+            ),
+            const SizedBox(height: 12),
+            AppCalendar(
+              firstDate: firstDate,
+              lastDate: lastDate,
+              selectedDate: initialDate,
+              initialMonth: initialDate ?? lastDate,
+              onDateSelected: (date) => Navigator.of(ctx).pop(date),
+            ),
+          ],
+        ),
       ),
     ),
   );
