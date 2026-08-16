@@ -1,4 +1,5 @@
 import 'package:flutter/foundation.dart';
+import '../../../../core/utils/geo.dart';
 import '../../../../domain/models/hotel.dart';
 import '../../../../domain/models/room.dart';
 import '../../../../domain/repositories/hotel_repository.dart';
@@ -11,7 +12,14 @@ class HomeProvider extends ChangeNotifier {
   List<Hotel> _hotels = [];
   bool _isLoading = false;
   String? _error;
-  
+
+  // Search state: a place selected in the search bar filters/sorts the lists by
+  // proximity; the date is the intended check-in shown in the search bar.
+  double? _searchLat;
+  double? _searchLng;
+  String? _searchLabel;
+  DateTime? _searchDate;
+
   final Map<String, List<Room>> _roomsByHotelId = {};
 
   HomeProvider({
@@ -23,6 +31,56 @@ class HomeProvider extends ChangeNotifier {
   List<Hotel> get hotels => _hotels;
   bool get isLoading => _isLoading;
   String? get error => _error;
+
+  // ── Search ────────────────────────────────────────────────────────────────
+  String? get searchLabel => _searchLabel;
+  DateTime? get searchDate => _searchDate;
+  bool get hasLocationFilter => _searchLat != null && _searchLng != null;
+
+  /// Set the searched place; the lists re-sort by distance to it.
+  void setSearchLocation({
+    required double lat,
+    required double lng,
+    required String label,
+  }) {
+    _searchLat = lat;
+    _searchLng = lng;
+    _searchLabel = label;
+    notifyListeners();
+  }
+
+  /// Clear the place filter and go back to the default ordering.
+  void clearSearchLocation() {
+    _searchLat = null;
+    _searchLng = null;
+    _searchLabel = null;
+    notifyListeners();
+  }
+
+  void setSearchDate(DateTime date) {
+    _searchDate = date;
+    notifyListeners();
+  }
+
+  /// Hotels to show in the recommended + main lists. When a place is searched,
+  /// hotels with coordinates are sorted nearest-first and those without
+  /// coordinates are appended (so the list is never empty). Otherwise the full
+  /// list in its default order.
+  List<Hotel> get displayedHotels {
+    if (!hasLocationFilter) return _hotels;
+    final withCoords = <Hotel>[];
+    final withoutCoords = <Hotel>[];
+    for (final h in _hotels) {
+      if (h.latitude != null && h.longitude != null) {
+        withCoords.add(h);
+      } else {
+        withoutCoords.add(h);
+      }
+    }
+    withCoords.sort((a, b) => haversineKm(_searchLat!, _searchLng!, a.latitude!, a.longitude!)
+        .compareTo(haversineKm(_searchLat!, _searchLng!, b.latitude!, b.longitude!)));
+    return [...withCoords, ...withoutCoords];
+  }
 
   /// Quick local lookup by hotel ID.
   Hotel? getHotelById(String id) {

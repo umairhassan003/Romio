@@ -10,6 +10,9 @@ import '../providers/home_provider.dart';
 import '../../profile/providers/profile_provider.dart';
 import '../../auth/providers/auth_provider.dart';
 import '../../../features/my_reservations/providers/my_reservations_provider.dart';
+import 'dart:async';
+import '../../../../core/services/places_service.dart';
+import '../../../widgets/app_calendar.dart';
 import '../../../../domain/models/hotel.dart';
 
 class HomeScreen extends StatefulWidget {
@@ -20,11 +23,28 @@ class HomeScreen extends StatefulWidget {
 }
 
 class _HomeScreenState extends State<HomeScreen> {
-  bool _bannerDismissed = false;
+  final _searchController = TextEditingController();
+  final _searchFocus = FocusNode();
+  final _placesService = PlacesService();
+  Timer? _debounce;
+  List<PlaceResult> _suggestions = [];
+  bool _placesLoading = false;
+  bool _showSuggestions = false;
 
   @override
   void initState() {
     super.initState();
+    // Hide the suggestions dropdown shortly after the field loses focus (the
+    // delay lets a tap on a suggestion register first).
+    _searchFocus.addListener(() {
+      if (!_searchFocus.hasFocus) {
+        Future.delayed(const Duration(milliseconds: 200), () {
+          if (mounted && !_searchFocus.hasFocus) {
+            setState(() => _showSuggestions = false);
+          }
+        });
+      }
+    });
     WidgetsBinding.instance.addPostFrameCallback((_) {
       final user = context.read<AuthProvider>().user;
       if (user != null) {
@@ -40,6 +60,158 @@ class _HomeScreenState extends State<HomeScreen> {
   }
 
   @override
+  void dispose() {
+    _debounce?.cancel();
+    _searchController.dispose();
+    _searchFocus.dispose();
+    super.dispose();
+  }
+
+  /// Debounced Venezuela place lookup as the user types in the search field.
+  void _onPlaceQueryChanged(String value) {
+    _debounce?.cancel();
+    if (value.trim().length < 3) {
+      setState(() {
+        _suggestions = [];
+        _showSuggestions = false;
+        _placesLoading = false;
+      });
+      return;
+    }
+    setState(() {
+      _showSuggestions = true;
+      _placesLoading = true;
+    });
+    _debounce = Timer(const Duration(milliseconds: 400), () async {
+      final results = await _placesService.searchVenezuela(value);
+      if (!mounted || value != _searchController.text) return;
+      setState(() {
+        _suggestions = results;
+        _placesLoading = false;
+      });
+    });
+  }
+
+  /// Applies a picked place as the proximity filter and collapses the dropdown.
+  void _selectPlace(HomeProvider provider, PlaceResult place) {
+    provider.setSearchLocation(
+      lat: place.latitude,
+      lng: place.longitude,
+      label: place.label,
+    );
+    _searchController.text = place.label;
+    _searchFocus.unfocus();
+    setState(() {
+      _suggestions = [];
+      _showSuggestions = false;
+      _placesLoading = false;
+    });
+  }
+
+  /// Clears the search field and removes the proximity filter.
+  void _clearPlace(HomeProvider provider) {
+    _debounce?.cancel();
+    _searchController.clear();
+    _searchFocus.unfocus();
+    provider.clearSearchLocation();
+    setState(() {
+      _suggestions = [];
+      _showSuggestions = false;
+      _placesLoading = false;
+    });
+  }
+
+  /// Styled dropdown card of place suggestions shown inline under the search
+  /// bar (loading spinner, empty state, or the results list).
+  Widget _buildSuggestions(HomeProvider provider, AppLocalizations? l10n) {
+    return Container(
+      decoration: BoxDecoration(
+        color: AppColors.backgroundWhite,
+        borderRadius: BorderRadius.circular(16),
+        border: Border.all(color: AppColors.borderLight),
+        boxShadow: [
+          BoxShadow(
+            color: Colors.black.withValues(alpha: 0.06),
+            blurRadius: 8,
+            offset: const Offset(0, 4),
+          ),
+        ],
+      ),
+      child:
+          _placesLoading && _suggestions.isEmpty
+              ? const Padding(
+                padding: EdgeInsets.all(16),
+                child: Center(
+                  child: SizedBox(
+                    width: 20,
+                    height: 20,
+                    child: CircularProgressIndicator(
+                      strokeWidth: 2,
+                      color: AppColors.primaryBurgundy,
+                    ),
+                  ),
+                ),
+              )
+              : _suggestions.isEmpty
+              ? Padding(
+                padding: const EdgeInsets.all(16),
+                child: Text(
+                  l10n?.placeSearchEmpty ?? 'No se encontraron lugares.',
+                  style: AppTextStyles.bodyS.copyWith(
+                    color: AppColors.textSecondary,
+                  ),
+                ),
+              )
+              : ListView.separated(
+                shrinkWrap: true,
+                physics: const NeverScrollableScrollPhysics(),
+                padding: EdgeInsets.zero,
+                itemCount: _suggestions.length,
+                separatorBuilder:
+                    (_, __) =>
+                        const Divider(height: 1, color: AppColors.borderLight),
+                itemBuilder: (context, i) {
+                  final place = _suggestions[i];
+                  return ListTile(
+                    dense: true,
+                    leading: const Icon(
+                      Icons.location_on_outlined,
+                      color: AppColors.primaryBurgundy,
+                      size: 20,
+                    ),
+                    title: Text(
+                      place.label,
+                      style: AppTextStyles.labelM,
+                      maxLines: 1,
+                      overflow: TextOverflow.ellipsis,
+                    ),
+                    subtitle: Text(
+                      place.fullName,
+                      style: AppTextStyles.caption.copyWith(
+                        color: AppColors.textSecondary,
+                      ),
+                      maxLines: 1,
+                      overflow: TextOverflow.ellipsis,
+                    ),
+                    onTap: () => _selectPlace(provider, place),
+                  );
+                },
+              ),
+    );
+  }
+
+  /// Opens the shared calendar bottom sheet to choose the search date.
+  Future<void> _pickDate(BuildContext context, HomeProvider provider) async {
+    final picked = await showAppDatePicker(
+      context: context,
+      firstDate: DateTime.now(),
+      lastDate: DateTime.now().add(const Duration(days: 365)),
+      initialDate: provider.searchDate ?? DateTime.now(),
+    );
+    if (picked != null) provider.setSearchDate(picked);
+  }
+
+  @override
   Widget build(BuildContext context) {
     final l10n = AppLocalizations.of(context);
     final homeProvider = context.watch<HomeProvider>();
@@ -48,6 +220,8 @@ class _HomeScreenState extends State<HomeScreen> {
     final userName = profileProvider.displayName;
     final hasUpcoming = reservationsProvider.upcomingReservations.isNotEmpty;
     final today = DateFormat('dd/MM/yyyy').format(DateTime.now());
+    // Hotels to show — reordered by proximity when a place is searched.
+    final displayed = homeProvider.displayedHotels;
 
     return Scaffold(
       backgroundColor: AppColors.backgroundWhite,
@@ -99,162 +273,214 @@ class _HomeScreenState extends State<HomeScreen> {
                                     ],
                                   ),
                                 ),
-                                // GestureDetector(
-                                //   onTap: () {},
-                                //   child: Stack(
-                                //     children: [
-                                //       Container(
-                                //         width: 44,
-                                //         height: 44,
-                                //         decoration: BoxDecoration(
-                                //           color: AppColors.surfaceLight,
-                                //           shape: BoxShape.circle,
-                                //           border: Border.all(
-                                //             color: AppColors.borderLight,
-                                //           ),
-                                //         ),
-                                //         child: const Icon(
-                                //           Icons.notifications_outlined,
-                                //           color: AppColors.primaryBurgundy,
-                                //           size: 22,
-                                //         ),
-                                //       ),
-                                //       if (hasUpcoming)
-                                //         Positioned(
-                                //           top: 8,
-                                //           right: 8,
-                                //           child: Container(
-                                //             width: 8,
-                                //             height: 8,
-                                //             decoration: const BoxDecoration(
-                                //               color: AppColors.error,
-                                //               shape: BoxShape.circle,
-                                //             ),
-                                //           ),
-                                //         ),
-                                //     ],
-                                //   ),
-                                // ),
+                                GestureDetector(
+                                  onTap: () {},
+                                  child: Stack(
+                                    children: [
+                                      Container(
+                                        width: 44,
+                                        height: 44,
+                                        decoration: BoxDecoration(
+                                          color: AppColors.surfaceLight,
+                                          shape: BoxShape.circle,
+                                          border: Border.all(
+                                            color: AppColors.borderLight,
+                                          ),
+                                        ),
+                                        child: const Icon(
+                                          Icons.notifications_outlined,
+                                          color: AppColors.primaryBurgundy,
+                                          size: 22,
+                                        ),
+                                      ),
+                                      if (hasUpcoming)
+                                        Positioned(
+                                          top: 8,
+                                          right: 8,
+                                          child: Container(
+                                            width: 8,
+                                            height: 8,
+                                            decoration: const BoxDecoration(
+                                              color: AppColors.error,
+                                              shape: BoxShape.circle,
+                                            ),
+                                          ),
+                                        ),
+                                    ],
+                                  ),
+                                ),
                               ],
                             ),
                           ),
-                          // const SizedBox(height: 20),
+                          const SizedBox(height: 20),
 
                           // ── Search + date row ────────────────────────────
-                          // Padding(
-                          //   padding: const EdgeInsets.symmetric(horizontal: 24),
-                          //   child: Container(
-                          //     padding: const EdgeInsets.symmetric(
-                          //       horizontal: 16,
-                          //       vertical: 12,
-                          //     ),
-                          //     decoration: BoxDecoration(
-                          //       color: AppColors.backgroundWhite,
-                          //       borderRadius: BorderRadius.circular(12),
-                          //       border: Border.all(
-                          //         color: AppColors.borderLight,
-                          //       ),
-                          //       boxShadow: [
-                          //         BoxShadow(
-                          //           color: Colors.black.withValues(alpha: 0.04),
-                          //           blurRadius: 6,
-                          //           offset: const Offset(0, 2),
-                          //         ),
-                          //       ],
-                          //     ),
-                          //     child: Row(
-                          //       children: [
-                          //         Expanded(
-                          //           child: Text(
-                          //             l10n?.homeSearchHint ??
-                          //                 '¿A dónde quieres ir?',
-                          //             style: AppTextStyles.bodyM.copyWith(
-                          //               color: AppColors.textSecondary,
-                          //             ),
-                          //           ),
-                          //         ),
-                          //         const VerticalDivider(
-                          //           width: 24,
-                          //           thickness: 1,
-                          //           color: AppColors.borderLight,
-                          //         ),
-                          //         Text(
-                          //           today,
-                          //           style: AppTextStyles.labelM.copyWith(
-                          //             color: AppColors.textPrimary,
-                          //           ),
-                          //         ),
-                          //       ],
-                          //     ),
-                          //   ),
-                          // ),
+                          Padding(
+                            padding: const EdgeInsets.symmetric(horizontal: 24),
+                            child: Container(
+                              padding: const EdgeInsets.symmetric(
+                                horizontal: 16,
+                                vertical: 12,
+                              ),
+                              decoration: BoxDecoration(
+                                color: AppColors.backgroundWhite,
+                                borderRadius: BorderRadius.circular(50),
+                                border: Border.all(
+                                  color: AppColors.primaryBurgundy,
+                                ),
+                                boxShadow: [
+                                  BoxShadow(
+                                    color: Colors.black.withValues(alpha: 0.04),
+                                    blurRadius: 6,
+                                    offset: const Offset(0, 2),
+                                  ),
+                                ],
+                              ),
+                              child: Row(
+                                children: [
+                                  // Place entry — inline Venezuela autocomplete
+                                  Expanded(
+                                    child: TextField(
+                                      controller: _searchController,
+                                      focusNode: _searchFocus,
+                                      onChanged: _onPlaceQueryChanged,
+                                      textInputAction: TextInputAction.search,
+                                      style: AppTextStyles.bodyM.copyWith(
+                                        color: AppColors.textPrimary,
+                                      ),
+                                      decoration: InputDecoration(
+                                        isDense: true,
+                                        filled: false,
+                                        contentPadding: EdgeInsets.zero,
+                                        border: InputBorder.none,
+                                        enabledBorder: InputBorder.none,
+                                        focusedBorder: InputBorder.none,
+                                        disabledBorder: InputBorder.none,
+                                        errorBorder: InputBorder.none,
+                                        focusedErrorBorder: InputBorder.none,
+                                        hintText:
+                                            l10n?.homeSearchHint ??
+                                            '¿A dónde quieres ir?',
+                                        hintStyle: AppTextStyles.bodyM.copyWith(
+                                          color: AppColors.textSecondary,
+                                        ),
+                                      ),
+                                    ),
+                                  ),
+                                  if (_searchController.text.isNotEmpty ||
+                                      homeProvider.hasLocationFilter)
+                                    GestureDetector(
+                                      onTap: () => _clearPlace(homeProvider),
+                                      child: const Padding(
+                                        padding: EdgeInsets.only(left: 4),
+                                        child: Icon(
+                                          Icons.close,
+                                          size: 16,
+                                          color: AppColors.textSecondary,
+                                        ),
+                                      ),
+                                    ),
+                                  Container(
+                                    width: 1,
+                                    height: 24,
+                                    margin: const EdgeInsets.symmetric(
+                                      horizontal: 12,
+                                    ),
+                                    color: AppColors.textTertiary, // #B3B3B3
+                                  ),
+                                  // Date — opens the custom calendar bottom sheet
+                                  GestureDetector(
+                                    behavior: HitTestBehavior.opaque,
+                                    onTap:
+                                        () => _pickDate(context, homeProvider),
+                                    child: Text(
+                                      homeProvider.searchDate != null
+                                          ? DateFormat(
+                                            'dd/MM/yyyy',
+                                          ).format(homeProvider.searchDate!)
+                                          : today,
+                                      style: AppTextStyles.labelM.copyWith(
+                                        color: AppColors.textPrimary,
+                                      ),
+                                    ),
+                                  ),
+                                ],
+                              ),
+                            ),
+                          ),
+                          // ── Inline autocomplete suggestions ──────────────
+                          if (_showSuggestions)
+                            Padding(
+                              padding: const EdgeInsets.fromLTRB(24, 8, 24, 0),
+                              child: _buildSuggestions(homeProvider, l10n),
+                            ),
                           const SizedBox(height: 16),
 
                           // ── Reservation reminder banner ──────────────────
-                          if (hasUpcoming && !_bannerDismissed)
-                            Padding(
-                              padding: const EdgeInsets.symmetric(
-                                horizontal: 24,
-                              ),
-                              child: Container(
-                                padding: const EdgeInsets.symmetric(
-                                  horizontal: 16,
-                                  vertical: 12,
-                                ),
-                                decoration: BoxDecoration(
-                                  color: AppColors.info.withValues(alpha: 0.08),
-                                  borderRadius: BorderRadius.circular(12),
-                                  border: Border.all(
-                                    color: AppColors.info.withValues(
-                                      alpha: 0.3,
-                                    ),
-                                  ),
-                                ),
-                                child: Row(
-                                  children: [
-                                    const Icon(
-                                      Icons.info_outline,
-                                      color: AppColors.info,
-                                      size: 20,
-                                    ),
-                                    const SizedBox(width: 12),
-                                    Expanded(
-                                      child: Column(
-                                        crossAxisAlignment:
-                                            CrossAxisAlignment.start,
-                                        children: [
-                                          Text(
-                                            l10n?.homeNotificationBannerTitle ??
-                                                'Tienes una reserva programada',
-                                            style: AppTextStyles.labelM,
-                                          ),
-                                          Text(
-                                            l10n?.homeNotificationBannerBody ??
-                                                'No olvides tu reserva',
-                                            style: AppTextStyles.bodyS.copyWith(
-                                              color: AppColors.textSecondary,
-                                            ),
-                                          ),
-                                        ],
-                                      ),
-                                    ),
-                                    GestureDetector(
-                                      onTap:
-                                          () => setState(
-                                            () => _bannerDismissed = true,
-                                          ),
-                                      child: const Icon(
-                                        Icons.close,
-                                        size: 16,
-                                        color: AppColors.textSecondary,
-                                      ),
-                                    ),
-                                  ],
-                                ),
-                              ),
-                            ),
-                          if (hasUpcoming && !_bannerDismissed)
-                            const SizedBox(height: 16),
+                          // if (hasUpcoming && !_bannerDismissed)
+                          //   Padding(
+                          //     padding: const EdgeInsets.symmetric(
+                          //       horizontal: 24,
+                          //     ),
+                          //     child: Container(
+                          //       padding: const EdgeInsets.symmetric(
+                          //         horizontal: 16,
+                          //         vertical: 12,
+                          //       ),
+                          //       decoration: BoxDecoration(
+                          //         color: AppColors.info.withValues(alpha: 0.08),
+                          //         borderRadius: BorderRadius.circular(12),
+                          //         border: Border.all(
+                          //           color: AppColors.info.withValues(
+                          //             alpha: 0.3,
+                          //           ),
+                          //         ),
+                          //       ),
+                          //       child: Row(
+                          //         children: [
+                          //           const Icon(
+                          //             Icons.info_outline,
+                          //             color: AppColors.info,
+                          //             size: 20,
+                          //           ),
+                          //           const SizedBox(width: 12),
+                          //           Expanded(
+                          //             child: Column(
+                          //               crossAxisAlignment:
+                          //                   CrossAxisAlignment.start,
+                          //               children: [
+                          //                 Text(
+                          //                   l10n?.homeNotificationBannerTitle ??
+                          //                       'Tienes una reserva programada',
+                          //                   style: AppTextStyles.labelM,
+                          //                 ),
+                          //                 Text(
+                          //                   l10n?.homeNotificationBannerBody ??
+                          //                       'No olvides tu reserva',
+                          //                   style: AppTextStyles.bodyS.copyWith(
+                          //                     color: AppColors.textSecondary,
+                          //                   ),
+                          //                 ),
+                          //               ],
+                          //             ),
+                          //           ),
+                          //           GestureDetector(
+                          //             onTap:
+                          //                 () => setState(
+                          //                   () => _bannerDismissed = true,
+                          //                 ),
+                          //             child: const Icon(
+                          //               Icons.close,
+                          //               size: 16,
+                          //               color: AppColors.textSecondary,
+                          //             ),
+                          //           ),
+                          //         ],
+                          //       ),
+                          //     ),
+                          //   ),
+                          // if (hasUpcoming && !_bannerDismissed)
+                          //   const SizedBox(height: 16),
 
                           // ── Recommended section ──────────────────────────
                           Padding(
@@ -269,7 +495,7 @@ class _HomeScreenState extends State<HomeScreen> {
                           SizedBox(
                             height: 260,
                             child:
-                                homeProvider.hotels.isEmpty
+                                displayed.isEmpty
                                     ? Center(
                                       child: Text(
                                         l10n?.homeNoHotels ??
@@ -282,15 +508,15 @@ class _HomeScreenState extends State<HomeScreen> {
                                       ),
                                       scrollDirection: Axis.horizontal,
                                       itemCount:
-                                          homeProvider.hotels.length > 5
+                                          displayed.length > 5
                                               ? 5
-                                              : homeProvider.hotels.length,
+                                              : displayed.length,
                                       itemBuilder: (context, index) {
                                         return _RecommendedCard(
-                                          hotel: homeProvider.hotels[index],
+                                          hotel: displayed[index],
                                           priceLabel: homeProvider
                                               .getMinPriceLabelForHotel(
-                                                homeProvider.hotels[index],
+                                                displayed[index],
                                               ),
                                         );
                                       },
@@ -311,14 +537,12 @@ class _HomeScreenState extends State<HomeScreen> {
                             padding: const EdgeInsets.symmetric(horizontal: 24),
                             physics: const NeverScrollableScrollPhysics(),
                             shrinkWrap: true,
-                            itemCount: homeProvider.hotels.length,
+                            itemCount: displayed.length,
                             itemBuilder: (context, index) {
                               return _HotelListCard(
-                                hotel: homeProvider.hotels[index],
+                                hotel: displayed[index],
                                 priceLabel: homeProvider
-                                    .getMinPriceLabelForHotel(
-                                      homeProvider.hotels[index],
-                                    ),
+                                    .getMinPriceLabelForHotel(displayed[index]),
                               );
                             },
                           ),
