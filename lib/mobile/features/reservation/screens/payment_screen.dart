@@ -6,7 +6,7 @@ import 'package:flutter_gen/gen_l10n/app_localizations.dart';
 
 import '../../../../core/theme/app_colors.dart';
 import '../../../../core/theme/app_text_styles.dart';
-import '../../../../core/constants/payment_constants.dart';
+import '../../../../core/utils/card_brand.dart';
 import '../../../../domain/gateways/payment_gateway.dart';
 import '../providers/reservation_flow_provider.dart';
 import '../../profile/providers/profile_provider.dart';
@@ -41,6 +41,11 @@ class _PaymentScreenState extends State<PaymentScreen> {
   // they can be disposed).
   late final TapGestureRecognizer _termsRecognizer;
   late final TapGestureRecognizer _privacyRecognizer;
+
+  /// The reserve button is only enabled once a payment method is ready. When
+  /// paying by card the CVV must be entered; PayPal has no such requirement.
+  bool get _canConfirm =>
+      _mode != _PayMode.card || _cvvCtrl.text.trim().isNotEmpty;
 
   @override
   void initState() {
@@ -143,7 +148,7 @@ class _PaymentScreenState extends State<PaymentScreen> {
                 const SizedBox(height: 24),
                 Center(
                   child: Text(
-                    l10n?.paymentTitle ?? 'Método de pago',
+                    l10n?.paymentSummaryTitle ?? 'Resumen de reserva',
                     textAlign: TextAlign.center,
                     style: AppTextStyles.headingXL.copyWith(
                       color: AppColors.textPrimary,
@@ -155,14 +160,20 @@ class _PaymentScreenState extends State<PaymentScreen> {
             ),
           ),
 
-          _totalRow(context, provider, l10n),
-          const SizedBox(height: 24),
+          _bookingSummary(context, provider, l10n),
+          const SizedBox(height: 8),
+          const Divider(
+            color: AppColors.textSecondary,
+            thickness: 3,
+            height: 32,
+          ),
+          const SizedBox(height: 8),
 
           Text(
             l10n?.paymentInfoTitle ?? 'Información de pago',
             style: AppTextStyles.headingS,
           ),
-          const SizedBox(height: 12),
+          const SizedBox(height: 24),
 
           // ── Saved cards ──────────────────────────────────────────
           for (final card in wallet.cards)
@@ -185,7 +196,7 @@ class _PaymentScreenState extends State<PaymentScreen> {
                 l10n?.paymentPaypalInfo ??
                 'Serás redirigido al sitio de PayPal para completar el pago de forma segura.',
           ),
-          const Divider(color: AppColors.textPrimary, height: 1),
+          const Divider(color: AppColors.textSecondary, height: 1),
 
           // ── Choose / add another payment method ──────────────────
           InkWell(
@@ -260,7 +271,7 @@ class _PaymentScreenState extends State<PaymentScreen> {
             height: 52,
             child: ElevatedButton(
               onPressed:
-                  (provider.isLoading || !_acceptedTerms)
+                  (provider.isLoading || !_acceptedTerms || !_canConfirm)
                       ? null
                       : () => _onConfirm(context),
               style: ElevatedButton.styleFrom(
@@ -283,7 +294,7 @@ class _PaymentScreenState extends State<PaymentScreen> {
                         ),
                       )
                       : Text(
-                        '${l10n?.paymentConfirmPay ?? 'Confirmar y pagar'} · \$${provider.amountDueNow.toStringAsFixed(0)}',
+                        l10n?.paymentReserveButton ?? 'Reservar',
                         style: AppTextStyles.labelM.copyWith(
                           color: AppColors.textOnPrimary,
                         ),
@@ -295,76 +306,101 @@ class _PaymentScreenState extends State<PaymentScreen> {
     );
   }
 
-  Widget _totalRow(
+  /// The "Resumen de reserva" card: room, the reservation fee (charged now),
+  /// and the split between what's paid now and what's settled at the hotel.
+  Widget _bookingSummary(
     BuildContext context,
     ReservationFlowProvider provider,
     AppLocalizations? l10n,
   ) {
-    return Container(
-      padding: const EdgeInsets.all(16),
-      decoration: BoxDecoration(
-        color: AppColors.surfaceLight,
-        borderRadius: BorderRadius.circular(16),
-      ),
-      child: Column(
-        children: [
-          Row(
-            mainAxisAlignment: MainAxisAlignment.spaceBetween,
-            children: [
-              Text(l10n?.paymentTotalLabel ?? 'Total',
-                  style: AppTextStyles.labelM),
-              Text(
-                '\$${provider.totalPrice.toStringAsFixed(2)} ${PaymentConstants.currency}',
-                style: AppTextStyles.headingS.copyWith(
-                  color: provider.isPayPartial
-                      ? AppColors.textSecondary
-                      : AppColors.primaryBurgundy,
-                ),
-              ),
-            ],
-          ),
-          // For partial payment, break the total into the deposit charged now
-          // and the balance collected at the property.
-          if (provider.isPayPartial) ...[
-            const SizedBox(height: 10),
-            _breakdownRow(
-              l10n?.paymentDepositNowLabel ?? 'Depósito ahora',
-              provider.amountDueNow,
-              emphasize: true,
-            ),
-            const SizedBox(height: 6),
-            _breakdownRow(
-              l10n?.paymentBalanceAtPropertyLabel ?? 'A pagar en la propiedad',
-              provider.balanceDueAtProperty,
-            ),
-          ],
-        ],
-      ),
-    );
-  }
-
-  Widget _breakdownRow(String label, double amount, {bool emphasize = false}) {
-    return Row(
-      mainAxisAlignment: MainAxisAlignment.spaceBetween,
+    final payAtHotel = provider.balanceDueAtProperty;
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
       children: [
         Text(
-          label,
-          style: AppTextStyles.bodyM.copyWith(color: AppColors.textSecondary),
+          l10n?.confirmationRoomLabel ?? 'Habitación',
+          style: AppTextStyles.headingS,
         ),
+        const SizedBox(height: 4),
         Text(
-          '\$${amount.toStringAsFixed(2)} ${PaymentConstants.currency}',
-          style: (emphasize ? AppTextStyles.headingS : AppTextStyles.labelM)
-              .copyWith(
-            color:
-                emphasize ? AppColors.primaryBurgundy : AppColors.textPrimary,
+          provider.roomName ?? '',
+          style: AppTextStyles.bodyM.copyWith(color: AppColors.textPrimary),
+        ),
+        const SizedBox(height: 24),
+
+        // ── Line items ──────────────────────────────────────────────
+        _summaryRow(label: '1 ${l10n?.reservationRoom ?? 'Habitación'}'),
+        const SizedBox(height: 10),
+        _summaryRow(
+          label: l10n?.summaryReservationFee ?? 'Tasa de reserva',
+          value: _money(provider.amountDueNow),
+        ),
+        const Divider(color: AppColors.textSecondary, height: 32),
+
+        // ── Payment split ───────────────────────────────────────────
+        if (payAtHotel > 0) ...[
+          _summaryRow(
+            label: l10n?.summaryPayAtHotel ?? 'En el hotel pagas',
+            value: _money(payAtHotel),
           ),
+          const SizedBox(height: 10),
+        ],
+        _summaryRow(
+          label: l10n?.summaryPayNow ?? 'Ahora solo pagas',
+          value: _money(provider.amountDueNow),
+        ),
+        const SizedBox(height: 12),
+        _summaryRow(
+          label: (l10n?.paymentTotalLabel ?? 'Total').toUpperCase(),
+          value: _money(provider.totalPrice),
+          emphasize: true,
+        ),
+        const SizedBox(height: 16),
+        Text(
+          l10n?.summaryVatIncluded ??
+              'El IVA está ya incluido en nuestros precios',
+          style: AppTextStyles.bodyS.copyWith(color: AppColors.textSecondary),
         ),
       ],
     );
   }
 
-  /// A selectable saved card. When it is the active choice, the CVV field is
-  /// revealed just below it (CVV is required only at pay time).
+  Widget _summaryRow({
+    required String label,
+    String? value,
+    bool emphasize = false,
+  }) {
+    final style =
+        emphasize
+            ? AppTextStyles.labelM.copyWith(
+              fontWeight: FontWeight.w700,
+              color: AppColors.textPrimary,
+            )
+            : AppTextStyles.bodyM.copyWith(color: AppColors.textPrimary);
+    return Row(
+      mainAxisAlignment: MainAxisAlignment.spaceBetween,
+      children: [
+        Text(label, style: style),
+        if (value != null) Text(value, style: style),
+      ],
+    );
+  }
+
+  /// Formats an amount to match the mockup: trailing zeros trimmed, comma
+  /// decimal separator, currency symbol as a suffix (e.g. 53.2 -> "53,2$").
+  String _money(double amount) {
+    var s = amount.toStringAsFixed(2);
+    if (s.contains('.')) {
+      s = s.replaceAll(RegExp(r'0+$'), '');
+      s = s.replaceAll(RegExp(r'\.$'), '');
+    }
+    return '${s.replaceAll('.', ',')}\$';
+  }
+
+  /// A selectable saved card. Tapping selects it; the active card reveals the
+  /// CVV ("CSV") field below (the CVV is required only at pay time). Styled to
+  /// match the booking mockup: brand logo, "MC-0000" title, masked number +
+  /// expiry, then a divider and the CSV field with its helper text.
   Widget _savedCardTile(
     BuildContext context,
     CardWalletProvider wallet,
@@ -372,100 +408,119 @@ class _PaymentScreenState extends State<PaymentScreen> {
     AppLocalizations? l10n,
   ) {
     final isActive = _mode == _PayMode.card && wallet.selected?.id == card.id;
-    return Column(
-      children: [
-        GestureDetector(
-          onTap: () {
-            wallet.select(card.id);
-            setState(() => _mode = _PayMode.card);
-          },
-          child: Container(
-            padding: const EdgeInsets.all(16),
-            margin: const EdgeInsets.only(bottom: 12),
-            decoration: BoxDecoration(
-              color: AppColors.backgroundWhite,
-              borderRadius: BorderRadius.circular(16),
-              border: Border.all(
-                color:
-                    isActive
-                        ? AppColors.primaryBurgundy
-                        : AppColors.borderLight,
-                width: 2,
+    return GestureDetector(
+      behavior: HitTestBehavior.opaque,
+      onTap: () {
+        wallet.select(card.id);
+        setState(() => _mode = _PayMode.card);
+      },
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Row(
+            children: [
+              SizedBox(
+                width: 56,
+                child: CardBrandLogo(brand: card.brand, height: 30),
               ),
-            ),
-            child: Column(
-              children: [
-                Row(
+              const SizedBox(width: 16),
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    SizedBox(
-                      width: 40,
-                      child: CardBrandLogo(brand: card.brand, height: 20),
-                    ),
-                    const SizedBox(width: 12),
-                    Expanded(
-                      child: Column(
-                        crossAxisAlignment: CrossAxisAlignment.start,
-                        children: [
-                          Text(card.maskedLabel, style: AppTextStyles.labelM),
-                          Text(
-                            '${l10n?.cardExpiryShort ?? 'Exp...'} ${card.expiryLabel}',
-                            style: AppTextStyles.caption.copyWith(
-                              color: AppColors.textSecondary,
-                            ),
-                          ),
-                        ],
+                    Text(
+                      _cardTitle(card),
+                      style: AppTextStyles.headingS.copyWith(
+                        fontWeight: FontWeight.w700,
+                        fontSize: 14,
                       ),
                     ),
-                    Radio<String>(
-                      value: card.id,
-                      groupValue:
-                          _mode == _PayMode.card ? wallet.selected?.id : null,
-                      activeColor: AppColors.primaryBurgundy,
-                      onChanged: (_) {
-                        wallet.select(card.id);
-                        setState(() => _mode = _PayMode.card);
-                      },
+                    const SizedBox(height: 2),
+                    Text(
+                      _cardMaskedLine(card),
+                      style: AppTextStyles.bodyM.copyWith(
+                        color: AppColors.textPrimary,
+                      ),
                     ),
                   ],
                 ),
-                if (isActive) ...[
-                  const Divider(color: AppColors.borderLight),
-                  Row(
-                    children: [
-                      SizedBox(
-                        width: 90,
-                        child: TextField(
-                          controller: _cvvCtrl,
-                          keyboardType: TextInputType.number,
-                          obscureText: true,
-                          maxLength: 4,
-                          decoration: InputDecoration(
-                            isDense: true,
-                            counterText: '',
-                            labelText: l10n?.paymentCardCvv ?? 'CSV',
-                            hintText: '123',
-                          ),
-                        ),
-                      ),
-                      const SizedBox(width: 12),
-                      Expanded(
-                        child: Text(
-                          l10n?.paymentCvvSectionHelp ??
-                              'Para usar una tarjeta de pago, escriba su código de verificación de tres dígitos visible en el reverso de la tarjeta',
-                          style: AppTextStyles.caption.copyWith(
-                            color: AppColors.textSecondary,
-                          ),
-                        ),
-                      ),
-                    ],
+              ),
+            ],
+          ),
+          const Divider(color: AppColors.textSecondary, height: 32),
+          if (isActive) ...[
+            Row(
+              children: [
+                SizedBox(
+                  width: 56,
+                  child: Text(
+                    l10n?.paymentCardCvv ?? 'CSV',
+                    style: AppTextStyles.headingS.copyWith(
+                      fontWeight: FontWeight.w700,
+                    ),
                   ),
-                ],
+                ),
+                const SizedBox(width: 16),
+                Expanded(
+                  child: TextField(
+                    controller: _cvvCtrl,
+                    keyboardType: TextInputType.number,
+                    obscureText: true,
+                    maxLength: 4,
+                    style: AppTextStyles.bodyM,
+                    // Rebuild so the reserve button enables/disables as the CVV
+                    // is typed or cleared.
+                    onChanged: (_) => setState(() {}),
+                    decoration: InputDecoration(
+                      isDense: true,
+                      counterText: '',
+                      filled: false,
+                      contentPadding: EdgeInsets.zero,
+                      border: InputBorder.none,
+                      enabledBorder: InputBorder.none,
+                      focusedBorder: InputBorder.none,
+                      disabledBorder: InputBorder.none,
+                      errorBorder: InputBorder.none,
+                      hintText: l10n?.paymentCvvRequiredHint ?? 'Obligatorio',
+                      hintStyle: AppTextStyles.bodyM.copyWith(
+                        color: AppColors.textSecondary,
+                      ),
+                    ),
+                  ),
+                ),
               ],
             ),
-          ),
-        ),
-      ],
+            const SizedBox(height: 8),
+            Text(
+              l10n?.paymentCvvSectionHelp ??
+                  'Para usar una tarjeta de pago, escriba su código de verificación de tres dígitos visible en el reverso de la tarjeta',
+              style: AppTextStyles.bodyS.copyWith(
+                color: AppColors.textSecondary,
+              ),
+            ),
+          ],
+          const SizedBox(height: 18),
+        ],
+      ),
     );
+  }
+
+  /// Short card identifier shown as the tile title, e.g. "MC-0000".
+  String _cardTitle(SavedCard card) {
+    final short =
+        card.brand == CardBrand.mastercard
+            ? 'MC'
+            : card.brand == CardBrand.visa
+            ? 'VISA'
+            : 'CARD';
+    return '$short-${card.last4}';
+  }
+
+  /// Masked number + expiry, e.g. "***********0000 - 1/2031".
+  String _cardMaskedLine(SavedCard card) {
+    final len = card.sanitizedNumber.length;
+    final hidden = len > 4 ? len - 4 : 11;
+    return '${'*' * hidden}${card.last4} - ${card.expMonth}/${card.expYear}';
   }
 
   Widget _optionTile({
