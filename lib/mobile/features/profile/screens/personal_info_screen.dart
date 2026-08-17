@@ -6,6 +6,7 @@ import '../../../../core/theme/app_text_styles.dart';
 import 'package:flutter_gen/gen_l10n/app_localizations.dart';
 import '../providers/profile_provider.dart';
 import '../../auth/providers/auth_provider.dart';
+import '../../payment/providers/card_wallet_provider.dart';
 import '../../../widgets/success_sheet.dart';
 
 class PersonalInfoScreen extends StatefulWidget {
@@ -189,6 +190,8 @@ class _PersonalInfoScreenState extends State<PersonalInfoScreen> {
     final messenger = ScaffoldMessenger.of(context);
     final profileProvider = context.read<ProfileProvider>();
     final authProvider = context.read<AuthProvider>();
+    final cardWallet = context.read<CardWalletProvider>();
+    final userId = authProvider.user?.id;
 
     // Blocking loading indicator.
     showDialog(
@@ -207,7 +210,8 @@ class _PersonalInfoScreenState extends State<PersonalInfoScreen> {
     Navigator.of(context, rootNavigator: true).pop();
 
     if (ok) {
-      // Clear the (now invalid) local session and go to login.
+      // Delete this account's locally-stored cards, then clear the session.
+      if (userId != null) await cardWallet.clearForUser(userId);
       try {
         await authProvider.signOut();
       } catch (_) {

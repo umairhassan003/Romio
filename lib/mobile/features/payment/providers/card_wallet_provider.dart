@@ -1,16 +1,23 @@
+import 'dart:async';
 import 'package:flutter/foundation.dart';
+import '../data/saved_card_store.dart';
 import '../models/saved_card.dart';
 
-/// In-memory wallet of cards the guest added during this session.
+/// Wallet of the guest's saved cards.
 ///
-/// Nothing here is persisted to Supabase — the list (including card numbers)
-/// lives only in RAM and is gone on app restart. This backs the add / delete /
-/// select-to-pay UI; swapping it for a vault-backed store later is isolated to
-/// this class.
+/// Cards are persisted **only on this device**, encrypted, via [SavedCardStore]
+/// (never sent to Supabase). They are scoped to the signed-in account: call
+/// [loadForUser] after login to populate them, and [clearForUser] when the
+/// account is deleted. The full card number is kept so a saved card can be paid
+/// with on the same device; the CVV is never stored (collected at pay time).
 class CardWalletProvider extends ChangeNotifier {
+  final SavedCardStore _store;
   final List<SavedCard> _cards = [];
   String? _selectedId;
-  int _counter = 0;
+  String? _userId;
+
+  CardWalletProvider({SavedCardStore? store})
+      : _store = store ?? SavedCardStore();
 
   List<SavedCard> get cards => List.unmodifiable(_cards);
   bool get hasCards => _cards.isNotEmpty;
@@ -23,7 +30,18 @@ class CardWalletProvider extends ChangeNotifier {
     return null;
   }
 
-  /// Adds a card and selects it. Returns the created [SavedCard].
+  /// Loads the cards saved on this device for [userId] (called after login).
+  Future<void> loadForUser(String userId) async {
+    _userId = userId;
+    final loaded = await _store.load(userId);
+    _cards
+      ..clear()
+      ..addAll(loaded);
+    _selectedId = _cards.isNotEmpty ? _cards.first.id : null;
+    notifyListeners();
+  }
+
+  /// Adds a card, selects it, and persists the wallet. Returns the new card.
   SavedCard addCard({
     required String number,
     required String holderName,
@@ -33,7 +51,8 @@ class CardWalletProvider extends ChangeNotifier {
     String? label,
   }) {
     final card = SavedCard(
-      id: 'card_${_counter++}',
+      // Timestamp-based id stays unique across sessions (no counter to reset).
+      id: 'card_${DateTime.now().microsecondsSinceEpoch}',
       number: number,
       holderName: holderName,
       expMonth: expMonth,
@@ -43,6 +62,7 @@ class CardWalletProvider extends ChangeNotifier {
     );
     _cards.add(card);
     _selectedId = card.id;
+    _persist();
     notifyListeners();
     return card;
   }
@@ -52,6 +72,7 @@ class CardWalletProvider extends ChangeNotifier {
     if (_selectedId == id) {
       _selectedId = _cards.isNotEmpty ? _cards.first.id : null;
     }
+    _persist();
     notifyListeners();
   }
 
@@ -60,5 +81,22 @@ class CardWalletProvider extends ChangeNotifier {
       _selectedId = id;
       notifyListeners();
     }
+  }
+
+  /// Deletes this account's cards from the device (used on account deletion).
+  Future<void> clearForUser(String userId) async {
+    if (_userId == userId) {
+      _cards.clear();
+      _selectedId = null;
+      notifyListeners();
+    }
+    await _store.clear(userId);
+  }
+
+  /// Writes the current cards to encrypted device storage for the active user.
+  void _persist() {
+    final userId = _userId;
+    if (userId == null) return;
+    unawaited(_store.save(userId, List.of(_cards)));
   }
 }

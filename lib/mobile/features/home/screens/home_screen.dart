@@ -11,6 +11,7 @@ import '../../profile/providers/profile_provider.dart';
 import '../../auth/providers/auth_provider.dart';
 import '../../../features/my_reservations/providers/my_reservations_provider.dart';
 import '../../reservation/providers/reservation_flow_provider.dart';
+import '../../payment/providers/card_wallet_provider.dart';
 import 'dart:async';
 import '../../../../core/services/places_service.dart';
 import '../../../widgets/app_calendar.dart';
@@ -49,6 +50,8 @@ class _HomeScreenState extends State<HomeScreen> {
     WidgetsBinding.instance.addPostFrameCallback((_) {
       final user = context.read<AuthProvider>().user;
       if (user != null) {
+        // Load this account's cards saved locally on this device.
+        context.read<CardWalletProvider>().loadForUser(user.id);
         context.read<ProfileProvider>().loadProfile(user.id);
         final profile = context.read<ProfileProvider>().profile;
         if (profile != null) {

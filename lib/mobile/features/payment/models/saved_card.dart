@@ -41,6 +41,28 @@ class SavedCard {
   String get expiryLabel =>
       '${expMonth.toString().padLeft(2, '0')}/${(expYear % 100).toString().padLeft(2, '0')}';
 
+  /// Serialized for encrypted on-device storage (never sent to a server).
+  /// The CVV is intentionally absent — it is never persisted.
+  Map<String, dynamic> toJson() => {
+        'id': id,
+        'number': number,
+        'holderName': holderName,
+        'expMonth': expMonth,
+        'expYear': expYear,
+        'billingCountry': billingCountry,
+        'label': label,
+      };
+
+  factory SavedCard.fromJson(Map<String, dynamic> json) => SavedCard(
+        id: json['id'] as String,
+        number: json['number'] as String,
+        holderName: json['holderName'] as String? ?? '',
+        expMonth: json['expMonth'] as int,
+        expYear: json['expYear'] as int,
+        billingCountry: json['billingCountry'] as String? ?? '',
+        label: json['label'] as String?,
+      );
+
   /// Builds the [CardDetails] passed to the payment gateway, injecting the CVV
   /// the guest enters at pay time (never persisted on the card itself).
   CardDetails toCardDetails(String cvv) => CardDetails(
