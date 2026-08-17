@@ -1,6 +1,5 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
-import 'package:go_router/go_router.dart';
 import 'package:provider/provider.dart';
 import 'package:flutter_gen/gen_l10n/app_localizations.dart';
 
@@ -15,8 +14,13 @@ import '../widgets/card_brand_logo.dart';
 /// "Añadir tarjeta" — collects a card (number, expiry, billing country) and
 /// adds it to the in-memory [CardWalletProvider]. Per product rules the CVV is
 /// NOT collected here (only at pay time), and nothing is written to Supabase.
+///
+/// Presentable two ways: as a full-screen route (default) or, when
+/// [isBottomSheet] is true, as the body of a modal bottom sheet. Both pop with
+/// the created [SavedCard] via `Navigator.pop`, so it works in either host.
 class AddCardScreen extends StatefulWidget {
-  const AddCardScreen({super.key});
+  final bool isBottomSheet;
+  const AddCardScreen({super.key, this.isBottomSheet = false});
 
   @override
   State<AddCardScreen> createState() => _AddCardScreenState();
@@ -50,6 +54,49 @@ class _AddCardScreenState extends State<AddCardScreen> {
   Widget build(BuildContext context) {
     final l10n = AppLocalizations.of(context);
 
+    if (widget.isBottomSheet) {
+      // ── Modal bottom-sheet presentation ──
+      return Padding(
+        padding: EdgeInsets.only(bottom: MediaQuery.of(context).viewInsets.bottom),
+        child: Container(
+          decoration: const BoxDecoration(
+            color: AppColors.backgroundWhite,
+            borderRadius: BorderRadius.vertical(top: Radius.circular(24)),
+          ),
+          child: SafeArea(
+            top: false,
+            child: Form(
+              key: _formKey,
+              child: SingleChildScrollView(
+                padding: const EdgeInsets.fromLTRB(24, 12, 24, 24),
+                child: Column(
+                  mainAxisSize: MainAxisSize.min,
+                  crossAxisAlignment: CrossAxisAlignment.stretch,
+                  children: [
+                    Center(
+                      child: Container(
+                        width: 40,
+                        height: 4,
+                        decoration: BoxDecoration(
+                          color: AppColors.borderField,
+                          borderRadius: BorderRadius.circular(2),
+                        ),
+                      ),
+                    ),
+                    const SizedBox(height: 16),
+                    _title(l10n),
+                    const SizedBox(height: 24),
+                    ..._formChildren(l10n),
+                  ],
+                ),
+              ),
+            ),
+          ),
+        ),
+      );
+    }
+
+    // ── Full-screen presentation ──
     return Scaffold(
       backgroundColor: AppColors.backgroundWhite,
       body: SafeArea(
@@ -61,7 +108,7 @@ class _AddCardScreenState extends State<AddCardScreen> {
               Align(
                 alignment: Alignment.centerLeft,
                 child: GestureDetector(
-                  onTap: () => context.pop(),
+                  onTap: () => Navigator.of(context).pop(),
                   child: Container(
                     width: 44,
                     height: 44,
@@ -75,148 +122,154 @@ class _AddCardScreenState extends State<AddCardScreen> {
                 ),
               ),
               const SizedBox(height: 24),
-              Center(
-                child: Text(
-                  l10n?.addCardTitle ?? 'Añadir tarjeta',
-                  textAlign: TextAlign.center,
-                  style: AppTextStyles.headingXL.copyWith(color: AppColors.textPrimary),
-                ),
-              ),
+              _title(l10n),
               const SizedBox(height: 24),
-
-              // ── Card information ──────────────────────────────────
-              Text(
-                l10n?.addCardInfoSection ?? 'Información de la tarjeta',
-                style: AppTextStyles.bodyS.copyWith(color: AppColors.textSecondary),
-              ),
-              const SizedBox(height: 8),
-              _fieldCard(
-                child: Column(
-                  children: [
-                    // Card number + live brand row
-                    TextFormField(
-                      controller: _numberCtrl,
-                      keyboardType: TextInputType.number,
-                      inputFormatters: [
-                        FilteringTextInputFormatter.digitsOnly,
-                        LengthLimitingTextInputFormatter(19),
-                        _CardNumberFormatter(),
-                      ],
-                      decoration: InputDecoration(
-                        isDense: true,
-                        border: InputBorder.none,
-                        hintText: l10n?.paymentCardNumber ?? 'Número de tarjeta',
-                        hintStyle: AppTextStyles.bodyM
-                            .copyWith(color: AppColors.textTertiary),
-                        suffixIcon: Padding(
-                          padding: const EdgeInsets.only(right: 4),
-                          child: AcceptedBrandsRow(
-                            highlight: _brand == CardBrand.unknown ? null : _brand,
-                          ),
-                        ),
-                        suffixIconConstraints:
-                            const BoxConstraints(minWidth: 0, minHeight: 0),
-                      ),
-                      validator: _validateNumber,
-                    ),
-                    const Divider(height: 1, color: AppColors.borderLight),
-                    const SizedBox(height: 4),
-                    // Expiry (no CVC on save — collected only at pay time)
-                    Row(
-                      children: [
-                        Expanded(
-                          child: TextFormField(
-                            controller: _expiryCtrl,
-                            keyboardType: TextInputType.number,
-                            inputFormatters: [
-                              FilteringTextInputFormatter.digitsOnly,
-                              LengthLimitingTextInputFormatter(4),
-                              _ExpiryFormatter(),
-                            ],
-                            decoration: InputDecoration(
-                              isDense: true,
-                              border: InputBorder.none,
-                              hintText: l10n?.addCardExpiryHint ?? 'MM/AA',
-                              hintStyle: AppTextStyles.bodyM
-                                  .copyWith(color: AppColors.textTertiary),
-                            ),
-                            validator: _validateExpiry,
-                          ),
-                        ),
-                        const Icon(Icons.credit_card,
-                            color: AppColors.textSecondary, size: 22),
-                      ],
-                    ),
-                  ],
-                ),
-              ),
-              const SizedBox(height: 24),
-
-              // ── Billing address ──────────────────────────────────
-              Text(
-                l10n?.addCardBillingSection ?? 'Dirección de facturación',
-                style: AppTextStyles.bodyS.copyWith(color: AppColors.textSecondary),
-              ),
-              const SizedBox(height: 8),
-              _fieldCard(
-                child: InkWell(
-                  onTap: _pickCountry,
-                  child: Row(
-                    children: [
-                      Expanded(
-                        child: Column(
-                          crossAxisAlignment: CrossAxisAlignment.start,
-                          children: [
-                            Text(
-                              l10n?.addCardCountryLabel ?? 'País o región',
-                              style: AppTextStyles.caption
-                                  .copyWith(color: AppColors.textSecondary),
-                            ),
-                            const SizedBox(height: 2),
-                            Text(_country, style: AppTextStyles.labelM),
-                          ],
-                        ),
-                      ),
-                      const Icon(Icons.chevron_right,
-                          color: AppColors.textSecondary),
-                    ],
-                  ),
-                ),
-              ),
-              const SizedBox(height: 20),
-
-              Text(
-                l10n?.addCardDisclaimer ??
-                    'Al facilitarnos los datos de la tarjeta, permites que Romio '
-                        'cargue en tu tarjeta futuros pagos conforme a las condiciones estipuladas.',
-                textAlign: TextAlign.center,
-                style: AppTextStyles.caption.copyWith(color: AppColors.textTertiary),
-              ),
-              const SizedBox(height: 28),
-
-              SizedBox(
-                width: double.infinity,
-                height: 52,
-                child: ElevatedButton(
-                  onPressed: _onConfirm,
-                  style: ElevatedButton.styleFrom(
-                    backgroundColor: AppColors.primaryBurgundy,
-                    shape: RoundedRectangleBorder(
-                        borderRadius: BorderRadius.circular(28)),
-                    elevation: 0,
-                  ),
-                  child: Text(
-                    l10n?.addCardConfirm ?? 'Confirmar',
-                    style: AppTextStyles.labelM.copyWith(color: Colors.white),
-                  ),
-                ),
-              ),
+              ..._formChildren(l10n),
             ],
           ),
         ),
       ),
     );
   }
+
+  Widget _title(AppLocalizations? l10n) => Center(
+        child: Text(
+          l10n?.addCardTitle ?? 'Añadir tarjeta',
+          textAlign: TextAlign.center,
+          style: AppTextStyles.headingXL.copyWith(color: AppColors.textPrimary),
+        ),
+      );
+
+  /// The card-information + billing + disclaimer + confirm section, shared by
+  /// both the screen and the bottom-sheet layouts.
+  List<Widget> _formChildren(AppLocalizations? l10n) => [
+        // ── Card information ──────────────────────────────────
+        Text(
+          l10n?.addCardInfoSection ?? 'Información de la tarjeta',
+          style: AppTextStyles.bodyS.copyWith(color: AppColors.textSecondary),
+        ),
+        const SizedBox(height: 8),
+        _fieldCard(
+          child: Column(
+            children: [
+              // Card number + live brand row
+              TextFormField(
+                controller: _numberCtrl,
+                keyboardType: TextInputType.number,
+                inputFormatters: [
+                  FilteringTextInputFormatter.digitsOnly,
+                  LengthLimitingTextInputFormatter(19),
+                  _CardNumberFormatter(),
+                ],
+                decoration: InputDecoration(
+                  isDense: true,
+                  border: InputBorder.none,
+                  hintText: l10n?.paymentCardNumber ?? 'Número de tarjeta',
+                  hintStyle:
+                      AppTextStyles.bodyM.copyWith(color: AppColors.textTertiary),
+                  suffixIcon: Padding(
+                    padding: const EdgeInsets.only(right: 4),
+                    child: AcceptedBrandsRow(
+                      highlight: _brand == CardBrand.unknown ? null : _brand,
+                    ),
+                  ),
+                  suffixIconConstraints:
+                      const BoxConstraints(minWidth: 0, minHeight: 0),
+                ),
+                validator: _validateNumber,
+              ),
+              const Divider(height: 1, color: AppColors.borderLight),
+              const SizedBox(height: 4),
+              // Expiry (no CVC on save — collected only at pay time)
+              Row(
+                children: [
+                  Expanded(
+                    child: TextFormField(
+                      controller: _expiryCtrl,
+                      keyboardType: TextInputType.number,
+                      inputFormatters: [
+                        FilteringTextInputFormatter.digitsOnly,
+                        LengthLimitingTextInputFormatter(4),
+                        _ExpiryFormatter(),
+                      ],
+                      decoration: InputDecoration(
+                        isDense: true,
+                        border: InputBorder.none,
+                        hintText: l10n?.addCardExpiryHint ?? 'MM/AA',
+                        hintStyle: AppTextStyles.bodyM
+                            .copyWith(color: AppColors.textTertiary),
+                      ),
+                      validator: _validateExpiry,
+                    ),
+                  ),
+                  const Icon(Icons.credit_card,
+                      color: AppColors.textSecondary, size: 22),
+                ],
+              ),
+            ],
+          ),
+        ),
+        const SizedBox(height: 24),
+
+        // ── Billing address ──────────────────────────────────
+        Text(
+          l10n?.addCardBillingSection ?? 'Dirección de facturación',
+          style: AppTextStyles.bodyS.copyWith(color: AppColors.textSecondary),
+        ),
+        const SizedBox(height: 8),
+        _fieldCard(
+          child: InkWell(
+            onTap: _pickCountry,
+            child: Row(
+              children: [
+                Expanded(
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Text(
+                        l10n?.addCardCountryLabel ?? 'País o región',
+                        style: AppTextStyles.caption
+                            .copyWith(color: AppColors.textSecondary),
+                      ),
+                      const SizedBox(height: 2),
+                      Text(_country, style: AppTextStyles.labelM),
+                    ],
+                  ),
+                ),
+                const Icon(Icons.chevron_right, color: AppColors.textSecondary),
+              ],
+            ),
+          ),
+        ),
+        const SizedBox(height: 20),
+
+        Text(
+          l10n?.addCardDisclaimer ??
+              'Al facilitarnos los datos de la tarjeta, permites que Romio '
+                  'cargue en tu tarjeta futuros pagos conforme a las condiciones estipuladas.',
+          textAlign: TextAlign.center,
+          style: AppTextStyles.caption.copyWith(color: AppColors.textTertiary),
+        ),
+        const SizedBox(height: 28),
+
+        SizedBox(
+          width: double.infinity,
+          height: 52,
+          child: ElevatedButton(
+            onPressed: _onConfirm,
+            style: ElevatedButton.styleFrom(
+              backgroundColor: AppColors.primaryBurgundy,
+              shape:
+                  RoundedRectangleBorder(borderRadius: BorderRadius.circular(28)),
+              elevation: 0,
+            ),
+            child: Text(
+              l10n?.addCardConfirm ?? 'Confirmar',
+              style: AppTextStyles.labelM.copyWith(color: Colors.white),
+            ),
+          ),
+        ),
+      ];
 
   Widget _fieldCard({required Widget child}) => Container(
         padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
@@ -327,7 +380,7 @@ class _AddCardScreenState extends State<AddCardScreen> {
           billingCountry: _country,
         );
 
-    context.pop(card);
+    Navigator.of(context).pop(card);
   }
 
   bool _passesLuhn(String number) {

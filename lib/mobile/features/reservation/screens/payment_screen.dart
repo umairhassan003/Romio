@@ -14,6 +14,7 @@ import '../../auth/providers/auth_provider.dart';
 import '../../payment/models/saved_card.dart';
 import '../../payment/providers/card_wallet_provider.dart';
 import '../../payment/widgets/card_brand_logo.dart';
+import '../../payment/screens/add_card_screen.dart';
 import '../widgets/paypal_approval_screen.dart';
 
 enum _PayMode { card, paypal }
@@ -44,10 +45,11 @@ class _PaymentScreenState extends State<PaymentScreen> {
   @override
   void initState() {
     super.initState();
-    _termsRecognizer = TapGestureRecognizer()
-      ..onTap = () => context.push('/profile/terms');
-    _privacyRecognizer = TapGestureRecognizer()
-      ..onTap = () => context.push('/profile/privacy-policy');
+    _termsRecognizer =
+        TapGestureRecognizer()..onTap = () => context.push('/profile/terms');
+    _privacyRecognizer =
+        TapGestureRecognizer()
+          ..onTap = () => context.push('/profile/privacy-policy');
   }
 
   @override
@@ -62,7 +64,8 @@ class _PaymentScreenState extends State<PaymentScreen> {
   /// "Privacy Policy" rendered bold + tappable (links to their pages). The link
   /// phrases are matched inside the localized sentence so it stays translatable.
   Widget _buildTermsText(AppLocalizations? l10n) {
-    final full = l10n?.paymentTermsAccept ??
+    final full =
+        l10n?.paymentTermsAccept ??
         'He leído y acepto los Términos y Condiciones y las Políticas de Privacidad.';
     final termsLabel = l10n?.termsLinkLabel ?? 'Términos y Condiciones';
     final privacyLabel = l10n?.privacyLinkLabel ?? 'Políticas de Privacidad';
@@ -86,7 +89,9 @@ class _PaymentScreenState extends State<PaymentScreen> {
       if (start > cursor) {
         spans.add(TextSpan(text: full.substring(cursor, start), style: base));
       }
-      spans.add(TextSpan(text: label, style: linkStyle, recognizer: recognizer));
+      spans.add(
+        TextSpan(text: label, style: linkStyle, recognizer: recognizer),
+      );
       cursor = start + label.length;
     }
     if (cursor < full.length) {
@@ -467,7 +472,14 @@ class _PaymentScreenState extends State<PaymentScreen> {
   }
 
   Future<void> _addCard() async {
-    final card = await context.push<SavedCard>('/profile/add-card');
+    // Present the add-card form as a modal bottom sheet (slides up on this
+    // screen) instead of navigating to a separate page.
+    final card = await showModalBottomSheet<SavedCard>(
+      context: context,
+      isScrollControlled: true,
+      backgroundColor: Colors.transparent,
+      builder: (_) => const AddCardScreen(isBottomSheet: true),
+    );
     if (card != null && mounted) {
       setState(() => _mode = _PayMode.card);
     }
