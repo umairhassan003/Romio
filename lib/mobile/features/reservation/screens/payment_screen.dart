@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/gestures.dart';
 import 'package:provider/provider.dart';
 import 'package:go_router/go_router.dart';
 import 'package:flutter_gen/gen_l10n/app_localizations.dart';
@@ -35,10 +36,64 @@ class _PaymentScreenState extends State<PaymentScreen> {
   bool _acceptedTerms = false;
   bool _initialised = false;
 
+  // Tap handlers for the bold links inside the terms text (kept as fields so
+  // they can be disposed).
+  late final TapGestureRecognizer _termsRecognizer;
+  late final TapGestureRecognizer _privacyRecognizer;
+
+  @override
+  void initState() {
+    super.initState();
+    _termsRecognizer = TapGestureRecognizer()
+      ..onTap = () => context.push('/profile/terms');
+    _privacyRecognizer = TapGestureRecognizer()
+      ..onTap = () => context.push('/profile/privacy-policy');
+  }
+
   @override
   void dispose() {
     _cvvCtrl.dispose();
+    _termsRecognizer.dispose();
+    _privacyRecognizer.dispose();
     super.dispose();
+  }
+
+  /// Builds the terms-acceptance sentence with "Terms and Conditions" and
+  /// "Privacy Policy" rendered bold + tappable (links to their pages). The link
+  /// phrases are matched inside the localized sentence so it stays translatable.
+  Widget _buildTermsText(AppLocalizations? l10n) {
+    final full = l10n?.paymentTermsAccept ??
+        'He leído y acepto los Términos y Condiciones y las Políticas de Privacidad.';
+    final termsLabel = l10n?.termsLinkLabel ?? 'Términos y Condiciones';
+    final privacyLabel = l10n?.privacyLinkLabel ?? 'Políticas de Privacidad';
+
+    final base = AppTextStyles.bodyS.copyWith(color: AppColors.textSecondary);
+    final linkStyle = base.copyWith(
+      fontWeight: FontWeight.w700,
+      color: AppColors.textPrimary,
+    );
+
+    final links = <(int, String, TapGestureRecognizer)>[];
+    final ti = full.indexOf(termsLabel);
+    if (ti >= 0) links.add((ti, termsLabel, _termsRecognizer));
+    final pi = full.indexOf(privacyLabel);
+    if (pi >= 0) links.add((pi, privacyLabel, _privacyRecognizer));
+    links.sort((a, b) => a.$1.compareTo(b.$1));
+
+    final spans = <InlineSpan>[];
+    var cursor = 0;
+    for (final (start, label, recognizer) in links) {
+      if (start > cursor) {
+        spans.add(TextSpan(text: full.substring(cursor, start), style: base));
+      }
+      spans.add(TextSpan(text: label, style: linkStyle, recognizer: recognizer));
+      cursor = start + label.length;
+    }
+    if (cursor < full.length) {
+      spans.add(TextSpan(text: full.substring(cursor), style: base));
+    }
+
+    return Text.rich(TextSpan(children: spans));
   }
 
   @override
@@ -176,15 +231,7 @@ class _PaymentScreenState extends State<PaymentScreen> {
                 ),
               ),
               const SizedBox(width: 8),
-              Expanded(
-                child: Text(
-                  l10n?.paymentTermsAccept ??
-                      'He leído y acepto los Términos y Condiciones y las Políticas de Privacidad.',
-                  style: AppTextStyles.bodyS.copyWith(
-                    color: AppColors.textSecondary,
-                  ),
-                ),
-              ),
+              Expanded(child: _buildTermsText(l10n)),
             ],
           ),
         ],

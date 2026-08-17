@@ -396,11 +396,15 @@ class _HomeScreenState extends State<HomeScreen> {
                                   // Date — opens the custom calendar bottom sheet
                                   GestureDetector(
                                     behavior: HitTestBehavior.opaque,
-                                    onTap: () =>
-                                        _pickDate(context, reservationProvider),
+                                    onTap:
+                                        () => _pickDate(
+                                          context,
+                                          reservationProvider,
+                                        ),
                                     child: Text(
-                                      DateFormat('dd/MM/yyyy')
-                                          .format(reservationProvider.selectedDate),
+                                      DateFormat('dd/MM/yyyy').format(
+                                        reservationProvider.selectedDate,
+                                      ),
                                       style: AppTextStyles.labelM.copyWith(
                                         color: AppColors.textPrimary,
                                       ),

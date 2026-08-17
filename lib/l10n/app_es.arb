@@ -606,6 +606,8 @@
     "paymentCvvSectionHelp": "Para usar una tarjeta de pago, escriba su código de verificación de tres dígitos visible en el reverso de la tarjeta",
     "paymentSelectCardError": "Selecciona una tarjeta",
     "paymentChooseOtherMethod": "Elegir otro método de pago",
+    "termsLinkLabel": "Términos y Condiciones",
+    "privacyLinkLabel": "Políticas de Privacidad",
     "placeSearchHint": "Busca una ciudad o lugar en Venezuela",
     "placeSearchPrompt": "Escribe al menos 3 letras para buscar un lugar en Venezuela.",
     "placeSearchEmpty": "No se encontraron lugares.",

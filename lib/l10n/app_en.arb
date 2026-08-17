@@ -606,6 +606,8 @@
     "paymentCvvSectionHelp": "To use a payment card, enter the three-digit verification code shown on the back of the card",
     "paymentSelectCardError": "Select a card",
     "paymentChooseOtherMethod": "Choose another payment method",
+    "termsLinkLabel": "Terms and Conditions",
+    "privacyLinkLabel": "Privacy Policy",
     "placeSearchHint": "Search a city or place in Venezuela",
     "placeSearchPrompt": "Type at least 3 letters to search a place in Venezuela.",
     "placeSearchEmpty": "No places found.",
