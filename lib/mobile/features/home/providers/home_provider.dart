@@ -18,7 +18,6 @@ class HomeProvider extends ChangeNotifier {
   double? _searchLat;
   double? _searchLng;
   String? _searchLabel;
-  DateTime? _searchDate;
 
   final Map<String, List<Room>> _roomsByHotelId = {};
 
@@ -34,7 +33,6 @@ class HomeProvider extends ChangeNotifier {
 
   // ── Search ────────────────────────────────────────────────────────────────
   String? get searchLabel => _searchLabel;
-  DateTime? get searchDate => _searchDate;
   bool get hasLocationFilter => _searchLat != null && _searchLng != null;
 
   /// Set the searched place; the lists re-sort by distance to it.
@@ -54,11 +52,6 @@ class HomeProvider extends ChangeNotifier {
     _searchLat = null;
     _searchLng = null;
     _searchLabel = null;
-    notifyListeners();
-  }
-
-  void setSearchDate(DateTime date) {
-    _searchDate = date;
     notifyListeners();
   }
 

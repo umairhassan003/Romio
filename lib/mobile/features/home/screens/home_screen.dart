@@ -10,6 +10,7 @@ import '../providers/home_provider.dart';
 import '../../profile/providers/profile_provider.dart';
 import '../../auth/providers/auth_provider.dart';
 import '../../../features/my_reservations/providers/my_reservations_provider.dart';
+import '../../reservation/providers/reservation_flow_provider.dart';
 import 'dart:async';
 import '../../../../core/services/places_service.dart';
 import '../../../widgets/app_calendar.dart';
@@ -200,15 +201,19 @@ class _HomeScreenState extends State<HomeScreen> {
     );
   }
 
-  /// Opens the shared calendar bottom sheet to choose the search date.
-  Future<void> _pickDate(BuildContext context, HomeProvider provider) async {
+  /// Opens the shared calendar bottom sheet to choose the booking date (shared
+  /// with the hotel page and the final booking via [ReservationFlowProvider]).
+  Future<void> _pickDate(
+    BuildContext context,
+    ReservationFlowProvider provider,
+  ) async {
     final picked = await showAppDatePicker(
       context: context,
       firstDate: DateTime.now(),
       lastDate: DateTime.now().add(const Duration(days: 365)),
-      initialDate: provider.searchDate ?? DateTime.now(),
+      initialDate: provider.selectedDate,
     );
-    if (picked != null) provider.setSearchDate(picked);
+    if (picked != null) provider.setDate(picked);
   }
 
   @override
@@ -217,9 +222,9 @@ class _HomeScreenState extends State<HomeScreen> {
     final homeProvider = context.watch<HomeProvider>();
     final profileProvider = context.watch<ProfileProvider>();
     final reservationsProvider = context.watch<MyReservationsProvider>();
+    final reservationProvider = context.watch<ReservationFlowProvider>();
     final userName = profileProvider.displayName;
     final hasUpcoming = reservationsProvider.upcomingReservations.isNotEmpty;
-    final today = DateFormat('dd/MM/yyyy').format(DateTime.now());
     // Hotels to show — reordered by proximity when a place is searched.
     final displayed = homeProvider.displayedHotels;
 
@@ -391,14 +396,11 @@ class _HomeScreenState extends State<HomeScreen> {
                                   // Date — opens the custom calendar bottom sheet
                                   GestureDetector(
                                     behavior: HitTestBehavior.opaque,
-                                    onTap:
-                                        () => _pickDate(context, homeProvider),
+                                    onTap: () =>
+                                        _pickDate(context, reservationProvider),
                                     child: Text(
-                                      homeProvider.searchDate != null
-                                          ? DateFormat(
-                                            'dd/MM/yyyy',
-                                          ).format(homeProvider.searchDate!)
-                                          : today,
+                                      DateFormat('dd/MM/yyyy')
+                                          .format(reservationProvider.selectedDate),
                                       style: AppTextStyles.labelM.copyWith(
                                         color: AppColors.textPrimary,
                                       ),

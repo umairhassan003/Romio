@@ -10,7 +10,6 @@ import '../../reservation/providers/reservation_flow_provider.dart';
 import '../../profile/providers/profile_provider.dart';
 import '../../../widgets/image_carousel.dart';
 import '../../../widgets/amenities_grid.dart';
-import '../../../widgets/app_calendar.dart';
 import '../../../../domain/models/room.dart';
 import '../../../../domain/models/amenity.dart';
 
@@ -117,30 +116,6 @@ class _RoomDetailScreenState extends State<RoomDetailScreen> {
       (icon: Icons.ac_unit, label: 'AC'),
       (icon: Icons.water_drop, label: 'Agua caliente'),
     ];
-  }
-
-  static const _esMonthsShort = [
-    'Ene', 'Feb', 'Mar', 'Abr', 'May', 'Jun',
-    'Jul', 'Ago', 'Sep', 'Oct', 'Nov', 'Dic',
-  ];
-
-  String _formatDate(DateTime d) =>
-      '${d.day} ${_esMonthsShort[d.month - 1]} ${d.year}';
-
-  /// Opens the shared calendar as a popup (same rules as the booking flow).
-  Future<void> _selectDate(
-    BuildContext context,
-    ReservationFlowProvider provider,
-  ) async {
-    final picked = await showAppDatePicker(
-      context: context,
-      firstDate: DateTime.now(),
-      lastDate: DateTime.now().add(const Duration(days: 365)),
-      initialDate: provider.selectedDate,
-    );
-    if (picked != null) {
-      provider.setDate(picked);
-    }
   }
 
   Future<void> _reserveOnProperty(BuildContext context) async {
@@ -366,51 +341,7 @@ class _RoomDetailScreenState extends State<RoomDetailScreen> {
                 height: 48,
               ),
 
-              // 5. Date Selection — tap to open the shared calendar popup
-              Row(
-                mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                children: [
-                  Text(
-                    l10n?.reservationSelectDate ?? 'Fecha de estancia',
-                    style: AppTextStyles.headingM,
-                  ),
-                  InkWell(
-                    onTap: () => _selectDate(context, provider),
-                    borderRadius: BorderRadius.circular(20),
-                    child: Container(
-                      padding: const EdgeInsets.symmetric(
-                        horizontal: 16,
-                        vertical: 8,
-                      ),
-                      decoration: BoxDecoration(
-                        color: AppColors.surfaceLight,
-                        borderRadius: BorderRadius.circular(20),
-                        border: Border.all(color: AppColors.borderLight),
-                      ),
-                      child: Row(
-                        mainAxisSize: MainAxisSize.min,
-                        children: [
-                          const Icon(
-                            Icons.calendar_today,
-                            color: AppColors.primaryBurgundy,
-                            size: 16,
-                          ),
-                          const SizedBox(width: 8),
-                          Text(
-                            _formatDate(provider.selectedDate),
-                            style: AppTextStyles.labelM.copyWith(
-                              color: AppColors.primaryBurgundy,
-                            ),
-                          ),
-                        ],
-                      ),
-                    ),
-                  ),
-                ],
-              ),
-              const SizedBox(height: 24),
-
-              // 6. Check-in Time Grid
+              // Check-in Time Grid
               Text(
                 l10n?.reservationCheckInLabel ?? 'Hora de entrada',
                 style: AppTextStyles.headingM,

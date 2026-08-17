@@ -1,11 +1,14 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import 'package:cached_network_image/cached_network_image.dart';
+import 'package:intl/intl.dart';
 import '../../../../core/theme/app_colors.dart';
 import '../../../../core/theme/app_text_styles.dart';
 import 'package:go_router/go_router.dart';
 import 'package:flutter_gen/gen_l10n/app_localizations.dart';
 import '../providers/home_provider.dart';
+import '../../reservation/providers/reservation_flow_provider.dart';
+import '../../../widgets/app_calendar.dart';
 import '../../../widgets/image_carousel.dart';
 import '../../../widgets/expandable_text.dart';
 import '../../../widgets/amenities_grid.dart';
@@ -57,10 +60,27 @@ class _HotelDetailScreenState extends State<HotelDetailScreen> {
     }
   }
 
+  /// Opens the shared calendar bottom sheet to pick the booking date. The date
+  /// lives in [ReservationFlowProvider] so it is the same on the main page and
+  /// when the booking is finalised.
+  Future<void> _selectDate(
+    BuildContext context,
+    ReservationFlowProvider provider,
+  ) async {
+    final picked = await showAppDatePicker(
+      context: context,
+      firstDate: DateTime.now(),
+      lastDate: DateTime.now().add(const Duration(days: 365)),
+      initialDate: provider.selectedDate,
+    );
+    if (picked != null) provider.setDate(picked);
+  }
+
   @override
   Widget build(BuildContext context) {
     final l10n = AppLocalizations.of(context);
     final hotel = context.watch<HomeProvider>().getHotelById(widget.hotelId);
+    final reservationProvider = context.watch<ReservationFlowProvider>();
     if (hotel == null) {
       return Scaffold(
         backgroundColor: AppColors.backgroundWhite,
@@ -155,6 +175,52 @@ class _HotelDetailScreenState extends State<HotelDetailScreen> {
                 items: _amenityItems(hotel.amenities),
                 moreLabel: l10n?.seeMore ?? 'Ver más',
                 lessLabel: l10n?.seeLess ?? 'Ver menos',
+              ),
+              const SizedBox(height: 32),
+
+              // 4b. Booking date — shared with the main page and the booking.
+              Text(
+                l10n?.reservationSelectDate ?? 'Seleccionar fecha',
+                style: AppTextStyles.headingM,
+              ),
+              const SizedBox(height: 16),
+              Center(
+                child: InkWell(
+                  onTap: () => _selectDate(context, reservationProvider),
+                  borderRadius: BorderRadius.circular(28),
+                  child: Container(
+                    width: 200,
+                    padding: const EdgeInsets.symmetric(
+                      horizontal: 20,
+                      vertical: 12,
+                    ),
+                    decoration: BoxDecoration(
+                      color: AppColors.backgroundWhite,
+                      borderRadius: BorderRadius.circular(28),
+                      border: Border.all(color: AppColors.textPrimary),
+                    ),
+                    child: Row(
+                      children: [
+                        Expanded(
+                          child: Text(
+                            DateFormat(
+                              'dd/MM/yyyy',
+                            ).format(reservationProvider.selectedDate),
+                            textAlign: TextAlign.center,
+                            style: AppTextStyles.labelM.copyWith(
+                              color: AppColors.textPrimary,
+                            ),
+                          ),
+                        ),
+                        const Icon(
+                          Icons.keyboard_arrow_down,
+                          color: AppColors.textPrimary,
+                          size: 22,
+                        ),
+                      ],
+                    ),
+                  ),
+                ),
               ),
               const SizedBox(height: 32),
 
