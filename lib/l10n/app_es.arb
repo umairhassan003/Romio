@@ -609,6 +609,7 @@
     "placeSearchHint": "Busca una ciudad o lugar en Venezuela",
     "placeSearchPrompt": "Escribe al menos 3 letras para buscar un lugar en Venezuela.",
     "placeSearchEmpty": "No se encontraron lugares.",
+    "hotelLocationTitle": "Ubicación",
     "dataStorageIntro1": "Romio ofrece la posibilidad de guardar sus datos bancarios para simplificar futuras reservas.",
     "dataStorageIntro2": "Este servicio se ha diseñado para ofrecer un nivel de seguridad muy elevado.",
     "dataStorageBullet1": "Sus datos bancarios y sus transacciones están protegidos.",

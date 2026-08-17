@@ -2,6 +2,8 @@ import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import 'package:cached_network_image/cached_network_image.dart';
 import 'package:intl/intl.dart';
+import 'package:flutter_map/flutter_map.dart';
+import 'package:latlong2/latlong.dart';
 import '../../../../core/theme/app_colors.dart';
 import '../../../../core/theme/app_text_styles.dart';
 import 'package:go_router/go_router.dart';
@@ -74,6 +76,78 @@ class _HotelDetailScreenState extends State<HotelDetailScreen> {
       initialDate: provider.selectedDate,
     );
     if (picked != null) provider.setDate(picked);
+  }
+
+  /// A rounded, non-interactive OpenStreetMap preview centered on the hotel,
+  /// with a burgundy pin and the hotel's name labelled above it.
+  Widget _buildMap(Hotel hotel) {
+    final point = LatLng(hotel.latitude!, hotel.longitude!);
+    return ClipRRect(
+      borderRadius: BorderRadius.circular(16),
+      child: SizedBox(
+        height: 200,
+        child: FlutterMap(
+          options: MapOptions(
+            initialCenter: point,
+            initialZoom: 15,
+            interactionOptions:
+                const InteractionOptions(flags: InteractiveFlag.none),
+          ),
+          children: [
+            TileLayer(
+              urlTemplate: 'https://tile.openstreetmap.org/{z}/{x}/{y}.png',
+              userAgentPackageName: 'app.getromio.romio',
+            ),
+            MarkerLayer(
+              markers: [
+                Marker(
+                  point: point,
+                  width: 200,
+                  height: 64,
+                  alignment: Alignment.bottomCenter,
+                  child: Column(
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      Container(
+                        padding: const EdgeInsets.symmetric(
+                          horizontal: 8,
+                          vertical: 4,
+                        ),
+                        decoration: BoxDecoration(
+                          color: AppColors.backgroundWhite,
+                          borderRadius: BorderRadius.circular(8),
+                          boxShadow: [
+                            BoxShadow(
+                              color: Colors.black.withValues(alpha: 0.2),
+                              blurRadius: 4,
+                              offset: const Offset(0, 2),
+                            ),
+                          ],
+                        ),
+                        child: Text(
+                          hotel.name,
+                          maxLines: 1,
+                          overflow: TextOverflow.ellipsis,
+                          style: AppTextStyles.caption.copyWith(
+                            fontWeight: FontWeight.w700,
+                            color: AppColors.textPrimary,
+                          ),
+                        ),
+                      ),
+                      const Icon(
+                        Icons.location_on,
+                        color: AppColors.primaryBurgundy,
+                        size: 34,
+                      ),
+                    ],
+                  ),
+                ),
+              ],
+            ),
+          ],
+        ),
+      ),
+    );
   }
 
   @override
@@ -223,6 +297,17 @@ class _HotelDetailScreenState extends State<HotelDetailScreen> {
                 ),
               ),
               const SizedBox(height: 32),
+
+              // 4c. Location map — shown when the hotel has coordinates.
+              if (hotel.latitude != null && hotel.longitude != null) ...[
+                Text(
+                  l10n?.hotelLocationTitle ?? 'Ubicación',
+                  style: AppTextStyles.headingM,
+                ),
+                const SizedBox(height: 16),
+                _buildMap(hotel),
+                const SizedBox(height: 32),
+              ],
 
               // 5. Select room
               Text(

@@ -609,6 +609,7 @@
     "placeSearchHint": "Search a city or place in Venezuela",
     "placeSearchPrompt": "Type at least 3 letters to search a place in Venezuela.",
     "placeSearchEmpty": "No places found.",
+    "hotelLocationTitle": "Location",
     "dataStorageIntro1": "Romio offers the option to save your bank details to simplify future reservations.",
     "dataStorageIntro2": "This service is designed to provide a very high level of security.",
     "dataStorageBullet1": "Your bank details and transactions are protected.",
