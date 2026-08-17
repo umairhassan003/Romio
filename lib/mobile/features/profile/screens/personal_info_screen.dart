@@ -6,6 +6,7 @@ import '../../../../core/theme/app_text_styles.dart';
 import 'package:flutter_gen/gen_l10n/app_localizations.dart';
 import '../providers/profile_provider.dart';
 import '../../auth/providers/auth_provider.dart';
+import '../../../widgets/success_sheet.dart';
 
 class PersonalInfoScreen extends StatefulWidget {
   const PersonalInfoScreen({super.key});
@@ -87,21 +88,20 @@ class _PersonalInfoScreenState extends State<PersonalInfoScreen> {
     }
   }
 
-  void _showSavedConfirmation(AppLocalizations? l10n) {
-    Navigator.of(context).push(
-      PageRouteBuilder(
-        opaque: false,
-        barrierColor: Colors.transparent,
-        pageBuilder:
-            (_, __, ___) => _SuccessOverlay(
-              title: l10n?.personalInfoSaved ?? 'Cambios guardados',
-              badgeTitle: l10n?.profileSavedBadgeTitle ?? 'Perfil actualizado',
-              badgeBody:
-                  l10n?.profileSavedBadgeBody ??
-                  'Los datos se han guardado correctamente',
-            ),
+  Future<void> _showSavedConfirmation(AppLocalizations? l10n) async {
+    await showModalBottomSheet(
+      context: context,
+      isScrollControlled: true,
+      backgroundColor: Colors.transparent,
+      builder: (_) => SuccessSheet(
+        title: l10n?.personalInfoSaved ?? 'Cambios guardados',
+        badgeTitle: l10n?.profileSavedBadgeTitle ?? 'Perfil actualizado',
+        badgeBody: l10n?.profileSavedBadgeBody ??
+            'Los datos se han guardado correctamente',
       ),
     );
+    // Return to the profile menu once the confirmation is dismissed.
+    if (mounted) Navigator.of(context).pop();
   }
 
   void _confirmDeleteAccount(AppLocalizations? l10n) {
@@ -491,121 +491,6 @@ class _PersonalInfoScreenState extends State<PersonalInfoScreen> {
             ),
           ),
         ],
-      ),
-    );
-  }
-}
-
-/// Full-screen success overlay shown after saving personal info.
-class _SuccessOverlay extends StatelessWidget {
-  final String title;
-  final String badgeTitle;
-  final String badgeBody;
-  const _SuccessOverlay({
-    required this.title,
-    required this.badgeTitle,
-    required this.badgeBody,
-  });
-
-  @override
-  Widget build(BuildContext context) {
-    return Scaffold(
-      backgroundColor: AppColors.backgroundWhite,
-      body: SafeArea(
-        child: Padding(
-          padding: const EdgeInsets.all(24),
-          child: Column(
-            children: [
-              Align(
-                alignment: Alignment.topLeft,
-                child: GestureDetector(
-                  onTap: () {
-                    Navigator.pop(context);
-                    Navigator.pop(context);
-                  },
-                  child: Container(
-                    width: 44,
-                    height: 44,
-                    decoration: const BoxDecoration(
-                      color: Color(0xFFF2F2F2),
-                      shape: BoxShape.circle,
-                    ),
-                    child: const Icon(
-                      Icons.arrow_back,
-                      color: AppColors.primaryBurgundy,
-                      size: 20,
-                    ),
-                  ),
-                ),
-              ),
-              const Spacer(),
-              Container(
-                width: 88,
-                height: 88,
-                decoration: const BoxDecoration(
-                  color: AppColors.success,
-                  shape: BoxShape.circle,
-                ),
-                child: const Icon(Icons.check, color: Colors.white, size: 52),
-              ),
-              const SizedBox(height: 24),
-              Text(
-                title,
-                textAlign: TextAlign.center,
-                style: AppTextStyles.headingXL,
-              ),
-              const SizedBox(height: 40),
-              Container(
-                padding: const EdgeInsets.all(16),
-                decoration: BoxDecoration(
-                  color: AppColors.success.withValues(alpha: 0.08),
-                  borderRadius: BorderRadius.circular(12),
-                  border: Border.all(
-                    color: AppColors.success.withValues(alpha: 0.3),
-                  ),
-                ),
-                child: Row(
-                  children: [
-                    Container(
-                      width: 36,
-                      height: 36,
-                      decoration: const BoxDecoration(
-                        color: AppColors.success,
-                        shape: BoxShape.circle,
-                      ),
-                      child: const Icon(
-                        Icons.check,
-                        color: Colors.white,
-                        size: 20,
-                      ),
-                    ),
-                    const SizedBox(width: 12),
-                    Expanded(
-                      child: Column(
-                        crossAxisAlignment: CrossAxisAlignment.start,
-                        children: [
-                          Text(badgeTitle, style: AppTextStyles.labelM),
-                          Text(
-                            badgeBody,
-                            style: AppTextStyles.bodyS.copyWith(
-                              color: AppColors.textSecondary,
-                            ),
-                          ),
-                        ],
-                      ),
-                    ),
-                    const Icon(
-                      Icons.close,
-                      size: 16,
-                      color: AppColors.textSecondary,
-                    ),
-                  ],
-                ),
-              ),
-              const Spacer(),
-            ],
-          ),
-        ),
       ),
     );
   }

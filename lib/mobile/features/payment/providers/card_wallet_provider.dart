@@ -29,7 +29,8 @@ class CardWalletProvider extends ChangeNotifier {
     required String holderName,
     required int expMonth,
     required int expYear,
-    required String billingCountry,
+    String billingCountry = '',
+    String? label,
   }) {
     final card = SavedCard(
       id: 'card_${_counter++}',
@@ -38,6 +39,7 @@ class CardWalletProvider extends ChangeNotifier {
       expMonth: expMonth,
       expYear: expYear,
       billingCountry: billingCountry,
+      label: label,
     );
     _cards.add(card);
     _selectedId = card.id;

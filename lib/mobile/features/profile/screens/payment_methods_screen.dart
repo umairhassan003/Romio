@@ -9,6 +9,7 @@ import '../../../../core/utils/card_brand.dart';
 import '../../payment/models/saved_card.dart';
 import '../../payment/providers/card_wallet_provider.dart';
 import '../../payment/widgets/card_brand_logo.dart';
+import '../../../widgets/success_sheet.dart';
 
 /// Displays the guest's saved cards (from the in-memory [CardWalletProvider])
 /// with options to delete them and add new ones. When no card is saved it shows
@@ -114,7 +115,7 @@ class PaymentMethodScreen extends StatelessWidget {
 
       // Add another card
       GestureDetector(
-        onTap: () => context.push('/profile/add-card'),
+        onTap: () => context.push('/profile/add-payment-method'),
         child: Row(
           children: [
             const Icon(Icons.add, color: AppColors.primaryBurgundy, size: 20),
@@ -144,7 +145,7 @@ class PaymentMethodScreen extends StatelessWidget {
         ),
         title: l10n?.paymentMethodAddCard ?? 'Agregar método de pago',
         subtitle: null,
-        onTap: () => context.push('/profile/add-card'),
+        onTap: () => context.push('/profile/add-payment-method'),
         showArrow: true,
       ),
       const SizedBox(height: 24),
@@ -187,13 +188,18 @@ class PaymentMethodScreen extends StatelessWidget {
                           context.read<CardWalletProvider>().removeCard(
                             card.id,
                           );
-                          Navigator.of(context).push(
-                            PageRouteBuilder(
-                              opaque: false,
-                              barrierColor: Colors.transparent,
-                              pageBuilder:
-                                  (_, __, ___) =>
-                                      _CardDeletedOverlay(l10n: l10n),
+                          showModalBottomSheet(
+                            context: context,
+                            isScrollControlled: true,
+                            backgroundColor: Colors.transparent,
+                            builder: (_) => SuccessSheet(
+                              title: l10n?.cardDeletedTitle ?? 'Tarjeta eliminada',
+                              badgeTitle:
+                                  l10n?.cardDeletedBadgeTitle ?? 'Tarjeta eliminada',
+                              badgeBody: l10n?.cardDeletedBadgeBody ??
+                                  'Has eliminado tu tarjeta',
+                              buttonLabel: l10n?.cardReturnMainMenu ??
+                                  'Volver al menú principal',
                             ),
                           );
                         },
@@ -269,22 +275,22 @@ class _CardWidget extends StatelessWidget {
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           Row(children: [brandMark]),
-          const SizedBox(height: 32),
+          const SizedBox(height: 64),
           if (card.holderName.isNotEmpty) ...[
             Text(
-              card.holderName,
-              style: const TextStyle(color: Colors.white, fontSize: 16),
+              card.holderName.toUpperCase(),
+              style: const TextStyle(color: Colors.white, fontSize: 14),
             ),
-            const SizedBox(height: 4),
+            const SizedBox(height: 2),
           ],
           Text(
             '$brandName - XXXX${card.last4}',
-            style: const TextStyle(color: Colors.white70, fontSize: 14),
+            style: const TextStyle(color: Colors.white, fontSize: 14),
           ),
           const SizedBox(height: 2),
           Text(
             '${l10n?.cardExpiryShort ?? 'Exp...'} ${card.expiryLabel}',
-            style: const TextStyle(color: Colors.white70, fontSize: 14),
+            style: const TextStyle(color: Colors.white, fontSize: 14),
           ),
         ],
       ),
@@ -384,134 +390,6 @@ class _DataStorageLink extends StatelessWidget {
               ),
             ),
           ],
-        ),
-      ),
-    );
-  }
-}
-
-// ─── Card deleted success overlay ────────────────────────────────────────────
-
-class _CardDeletedOverlay extends StatelessWidget {
-  final AppLocalizations? l10n;
-  const _CardDeletedOverlay({required this.l10n});
-
-  @override
-  Widget build(BuildContext context) {
-    return Scaffold(
-      backgroundColor: AppColors.backgroundWhite,
-      body: SafeArea(
-        child: Padding(
-          padding: const EdgeInsets.all(24),
-          child: Column(
-            children: [
-              Align(
-                alignment: Alignment.topLeft,
-                child: GestureDetector(
-                  onTap: () => Navigator.pop(context),
-                  child: Container(
-                    width: 44,
-                    height: 44,
-                    decoration: const BoxDecoration(
-                      color: Color(0xFFF2F2F2),
-                      shape: BoxShape.circle,
-                    ),
-                    child: const Icon(
-                      Icons.arrow_back,
-                      color: AppColors.primaryBurgundy,
-                      size: 20,
-                    ),
-                  ),
-                ),
-              ),
-              const Spacer(),
-              Container(
-                width: 88,
-                height: 88,
-                decoration: const BoxDecoration(
-                  color: AppColors.success,
-                  shape: BoxShape.circle,
-                ),
-                child: const Icon(Icons.check, color: Colors.white, size: 52),
-              ),
-              const SizedBox(height: 24),
-              Text(
-                l10n?.cardDeletedTitle ?? 'Tarjeta eliminada',
-                style: AppTextStyles.headingXL,
-              ),
-              const SizedBox(height: 40),
-              Container(
-                padding: const EdgeInsets.all(16),
-                decoration: BoxDecoration(
-                  color: AppColors.success.withValues(alpha: 0.08),
-                  borderRadius: BorderRadius.circular(12),
-                  border: Border.all(
-                    color: AppColors.success.withValues(alpha: 0.3),
-                  ),
-                ),
-                child: Row(
-                  children: [
-                    Container(
-                      width: 36,
-                      height: 36,
-                      decoration: const BoxDecoration(
-                        color: AppColors.success,
-                        shape: BoxShape.circle,
-                      ),
-                      child: const Icon(
-                        Icons.check,
-                        color: Colors.white,
-                        size: 20,
-                      ),
-                    ),
-                    const SizedBox(width: 12),
-                    Expanded(
-                      child: Column(
-                        crossAxisAlignment: CrossAxisAlignment.start,
-                        children: [
-                          Text(
-                            l10n?.cardDeletedBadgeTitle ?? 'Tarjeta eliminada',
-                            style: AppTextStyles.labelM,
-                          ),
-                          Text(
-                            l10n?.cardDeletedBadgeBody ??
-                                'Has eliminado tu tarjeta',
-                            style: AppTextStyles.bodyS.copyWith(
-                              color: AppColors.textSecondary,
-                            ),
-                          ),
-                        ],
-                      ),
-                    ),
-                    const Icon(
-                      Icons.close,
-                      size: 16,
-                      color: AppColors.textSecondary,
-                    ),
-                  ],
-                ),
-              ),
-              const Spacer(),
-              SizedBox(
-                width: double.infinity,
-                height: 52,
-                child: ElevatedButton(
-                  onPressed: () => Navigator.pop(context),
-                  style: ElevatedButton.styleFrom(
-                    backgroundColor: AppColors.primaryBurgundy,
-                    shape: RoundedRectangleBorder(
-                      borderRadius: BorderRadius.circular(28),
-                    ),
-                    elevation: 0,
-                  ),
-                  child: Text(
-                    l10n?.cardReturnMainMenu ?? 'Volver al menú principal',
-                    style: AppTextStyles.labelM.copyWith(color: Colors.white),
-                  ),
-                ),
-              ),
-            ],
-          ),
         ),
       ),
     );

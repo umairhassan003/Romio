@@ -12,13 +12,17 @@ class SavedCard {
   final int expYear;
   final String billingCountry;
 
+  /// Optional user-chosen nickname for the card (e.g. "Personal", "Trabajo").
+  final String? label;
+
   const SavedCard({
     required this.id,
     required this.number,
     required this.holderName,
     required this.expMonth,
     required this.expYear,
-    required this.billingCountry,
+    this.billingCountry = '',
+    this.label,
   });
 
   /// Digits only, spaces/dashes stripped.

@@ -112,6 +112,8 @@ flutter:
     - images/visa_blue.png
     - images/mastercard.png
     - images/paypal.png
+    - images/creditcard.png
+    - images/creditcard.png
 
   # An image asset can refer to one or more resolution-specific "variants", see
   # https://flutter.dev/to/resolution-aware-images
