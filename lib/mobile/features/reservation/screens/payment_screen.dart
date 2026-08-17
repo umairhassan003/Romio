@@ -283,7 +283,7 @@ class _PaymentScreenState extends State<PaymentScreen> {
                         ),
                       )
                       : Text(
-                        '${l10n?.paymentConfirmPay ?? 'Confirmar y pagar'} · \$${provider.totalPrice.toStringAsFixed(0)}',
+                        '${l10n?.paymentConfirmPay ?? 'Confirmar y pagar'} · \$${provider.amountDueNow.toStringAsFixed(0)}',
                         style: AppTextStyles.labelM.copyWith(
                           color: AppColors.textOnPrimary,
                         ),
@@ -306,18 +306,60 @@ class _PaymentScreenState extends State<PaymentScreen> {
         color: AppColors.surfaceLight,
         borderRadius: BorderRadius.circular(16),
       ),
-      child: Row(
-        mainAxisAlignment: MainAxisAlignment.spaceBetween,
+      child: Column(
         children: [
-          Text(l10n?.paymentTotalLabel ?? 'Total', style: AppTextStyles.labelM),
-          Text(
-            '\$${provider.totalPrice.toStringAsFixed(2)} ${PaymentConstants.currency}',
-            style: AppTextStyles.headingS.copyWith(
-              color: AppColors.primaryBurgundy,
-            ),
+          Row(
+            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+            children: [
+              Text(l10n?.paymentTotalLabel ?? 'Total',
+                  style: AppTextStyles.labelM),
+              Text(
+                '\$${provider.totalPrice.toStringAsFixed(2)} ${PaymentConstants.currency}',
+                style: AppTextStyles.headingS.copyWith(
+                  color: provider.isPayPartial
+                      ? AppColors.textSecondary
+                      : AppColors.primaryBurgundy,
+                ),
+              ),
+            ],
           ),
+          // For partial payment, break the total into the deposit charged now
+          // and the balance collected at the property.
+          if (provider.isPayPartial) ...[
+            const SizedBox(height: 10),
+            _breakdownRow(
+              l10n?.paymentDepositNowLabel ?? 'Depósito ahora',
+              provider.amountDueNow,
+              emphasize: true,
+            ),
+            const SizedBox(height: 6),
+            _breakdownRow(
+              l10n?.paymentBalanceAtPropertyLabel ?? 'A pagar en la propiedad',
+              provider.balanceDueAtProperty,
+            ),
+          ],
         ],
       ),
+    );
+  }
+
+  Widget _breakdownRow(String label, double amount, {bool emphasize = false}) {
+    return Row(
+      mainAxisAlignment: MainAxisAlignment.spaceBetween,
+      children: [
+        Text(
+          label,
+          style: AppTextStyles.bodyM.copyWith(color: AppColors.textSecondary),
+        ),
+        Text(
+          '\$${amount.toStringAsFixed(2)} ${PaymentConstants.currency}',
+          style: (emphasize ? AppTextStyles.headingS : AppTextStyles.labelM)
+              .copyWith(
+            color:
+                emphasize ? AppColors.primaryBurgundy : AppColors.textPrimary,
+          ),
+        ),
+      ],
     );
   }
 

@@ -192,15 +192,21 @@ class PaymentMethodScreen extends StatelessWidget {
                             context: context,
                             isScrollControlled: true,
                             backgroundColor: Colors.transparent,
-                            builder: (_) => SuccessSheet(
-                              title: l10n?.cardDeletedTitle ?? 'Tarjeta eliminada',
-                              badgeTitle:
-                                  l10n?.cardDeletedBadgeTitle ?? 'Tarjeta eliminada',
-                              badgeBody: l10n?.cardDeletedBadgeBody ??
-                                  'Has eliminado tu tarjeta',
-                              buttonLabel: l10n?.cardReturnMainMenu ??
-                                  'Volver al menú principal',
-                            ),
+                            builder:
+                                (_) => SuccessSheet(
+                                  title:
+                                      l10n?.cardDeletedTitle ??
+                                      'Tarjeta eliminada',
+                                  badgeTitle:
+                                      l10n?.cardDeletedBadgeTitle ??
+                                      'Tarjeta eliminada',
+                                  badgeBody:
+                                      l10n?.cardDeletedBadgeBody ??
+                                      'Has eliminado tu tarjeta',
+                                  buttonLabel:
+                                      l10n?.cardReturnMainMenu ??
+                                      'Volver al menú principal',
+                                ),
                           );
                         },
                       ),

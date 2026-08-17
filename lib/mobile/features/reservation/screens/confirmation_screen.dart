@@ -98,6 +98,26 @@ class ConfirmationScreen extends StatelessWidget {
                     _row('Check In', checkIn),
                     const SizedBox(height: 12),
                     _row('Check Out', checkOut),
+                    if (provider.isPayPartial) ...[
+                      const Divider(height: 24, color: AppColors.borderLight),
+                      _row(
+                        l10n?.paymentDepositNowLabel ?? 'Depósito pagado',
+                        '\$${(reservation?.depositAmount ?? provider.amountDueNow).toStringAsFixed(2)}',
+                      ),
+                      const SizedBox(height: 12),
+                      _row(
+                        l10n?.paymentBalanceAtPropertyLabel ??
+                            'A pagar en la propiedad',
+                        '\$${(reservation?.balanceDue ?? provider.balanceDueAtProperty).toStringAsFixed(2)}',
+                      ),
+                    ] else if (provider.isPayAtProperty) ...[
+                      const Divider(height: 24, color: AppColors.borderLight),
+                      _row(
+                        l10n?.paymentBalanceAtPropertyLabel ??
+                            'A pagar en la propiedad',
+                        '\$${(reservation?.totalPrice ?? provider.totalPrice).toStringAsFixed(2)}',
+                      ),
+                    ],
                   ],
                 ),
               ),

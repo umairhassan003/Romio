@@ -123,7 +123,7 @@ class ReservationScreen extends StatelessWidget {
                 Expanded(child: Text(l10n?.reservationCancelNote ?? 'Recuerda que puedes cancelar hasta 24h antes del check in sin compromiso',
                   style: AppTextStyles.caption.copyWith(color: AppColors.textSecondary))),
               ]),
-              if (provider.payOnProperty) ...[
+              if (provider.isPayAtProperty) ...[
                 const SizedBox(height: 8),
                 Row(children: [
                   const Icon(Icons.store_mall_directory_outlined, size: 14, color: AppColors.success),
@@ -131,6 +131,19 @@ class ReservationScreen extends StatelessWidget {
                   Expanded(child: Text(
                     l10n?.reservationPayOnPropertyNote ?? 'Este hotel permite pagar en la propiedad. No se requiere pago por adelantado.',
                     style: AppTextStyles.caption.copyWith(color: AppColors.success))),
+                ]),
+              ] else if (provider.isPayPartial) ...[
+                const SizedBox(height: 8),
+                Row(children: [
+                  const Icon(Icons.pie_chart_outline, size: 14, color: AppColors.primaryBurgundy),
+                  const SizedBox(width: 6),
+                  Expanded(child: Text(
+                    (l10n?.reservationPayPartialNote(
+                              provider.amountDueNow.toStringAsFixed(0),
+                              provider.balanceDueAtProperty.toStringAsFixed(0),
+                            ) ??
+                        'Paga \$${provider.amountDueNow.toStringAsFixed(0)} ahora y \$${provider.balanceDueAtProperty.toStringAsFixed(0)} en la propiedad.'),
+                    style: AppTextStyles.caption.copyWith(color: AppColors.primaryBurgundy))),
                 ]),
               ],
             ]),
@@ -147,36 +160,20 @@ class ReservationScreen extends StatelessWidget {
           child: Column(
             mainAxisSize: MainAxisSize.min,
             children: [
-              if (provider.payOnProperty) ...[
+              if (provider.isPayAtProperty) ...[
                 SizedBox(
                   width: double.infinity, height: 52,
                   child: ElevatedButton(
-                    onPressed: provider.isLoading ? null : () => context.push('/payment'),
+                    onPressed: provider.isLoading ? null : () => _reserveOnProperty(context),
                     style: ElevatedButton.styleFrom(
                       backgroundColor: AppColors.primaryBurgundy,
                       shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(28)),
                     ),
-                    child: Text(
-                      l10n?.payOnlineOption ?? 'Pagar en línea',
-                      style: AppTextStyles.labelM.copyWith(color: AppColors.textOnPrimary),
-                    ),
-                  ),
-                ),
-                const SizedBox(height: 12),
-                SizedBox(
-                  width: double.infinity, height: 52,
-                  child: OutlinedButton(
-                    onPressed: provider.isLoading ? null : () => _reserveOnProperty(context),
-                    style: OutlinedButton.styleFrom(
-                      foregroundColor: AppColors.primaryBurgundy,
-                      side: const BorderSide(color: AppColors.primaryBurgundy, width: 2),
-                      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(28)),
-                    ),
                     child: provider.isLoading
-                        ? const SizedBox(width: 24, height: 24, child: CircularProgressIndicator(strokeWidth: 2, color: AppColors.primaryBurgundy))
+                        ? const SizedBox(width: 24, height: 24, child: CircularProgressIndicator(strokeWidth: 2, color: Colors.white))
                         : Text(
                             l10n?.payOnPropertyOption ?? 'Pagar en la propiedad',
-                            style: AppTextStyles.labelM.copyWith(color: AppColors.primaryBurgundy),
+                            style: AppTextStyles.labelM.copyWith(color: AppColors.textOnPrimary),
                           ),
                   ),
                 ),
@@ -192,7 +189,10 @@ class ReservationScreen extends StatelessWidget {
                     child: provider.isLoading
                         ? const SizedBox(width: 24, height: 24, child: CircularProgressIndicator(strokeWidth: 2, color: Colors.white))
                         : Text(
-                            l10n?.reservationContinuePayment ?? 'Continuar con el pago',
+                            provider.isPayPartial
+                                ? (l10n?.reservationPayDeposit(provider.amountDueNow.toStringAsFixed(0)) ??
+                                    'Pagar depósito · \$${provider.amountDueNow.toStringAsFixed(0)}')
+                                : (l10n?.reservationContinuePayment ?? 'Continuar con el pago'),
                             style: AppTextStyles.labelM.copyWith(color: AppColors.textOnPrimary),
                           ),
                   ),

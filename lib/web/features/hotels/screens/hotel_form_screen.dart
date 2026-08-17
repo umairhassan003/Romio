@@ -37,7 +37,10 @@ class _HotelFormScreenState extends State<HotelFormScreen> {
   String? _coverUrl;
   String? _checkInTime;
   bool _isActive = true;
-  bool _payOnProperty = false;
+  HotelPaymentMode _paymentMode = HotelPaymentMode.payAtApp;
+  final _partial3hCtrl = TextEditingController();
+  final _partial6hCtrl = TextEditingController();
+  final _partial24hCtrl = TextEditingController();
   bool _isEdit = false;
   Hotel? _existingHotel;
   List<Amenity> _selectedAmenities = [];
@@ -68,7 +71,10 @@ class _HotelFormScreenState extends State<HotelFormScreen> {
           _coverUrl = hotel.coverImageUrl;
           _checkInTime = hotel.checkInTime;
           _isActive = hotel.isActive;
-          _payOnProperty = hotel.payOnProperty;
+          _paymentMode = hotel.paymentMode;
+          _partial3hCtrl.text = _formatPercent(hotel.partialPercent3h);
+          _partial6hCtrl.text = _formatPercent(hotel.partialPercent6h);
+          _partial24hCtrl.text = _formatPercent(hotel.partialPercent24h);
           _selectedAmenities = hotel.amenities ?? [];
           _galleryImages = hotel.images ?? [];
           setState(() {});
@@ -85,7 +91,24 @@ class _HotelFormScreenState extends State<HotelFormScreen> {
     _cityCtrl.dispose();
     _latCtrl.dispose();
     _lngCtrl.dispose();
+    _partial3hCtrl.dispose();
+    _partial6hCtrl.dispose();
+    _partial24hCtrl.dispose();
     super.dispose();
+  }
+
+  /// Renders a stored percentage back into the text field (e.g. 8.0 -> "8").
+  String _formatPercent(double? value) {
+    if (value == null) return '';
+    if (value == value.roundToDouble()) return value.toStringAsFixed(0);
+    return value.toString();
+  }
+
+  /// Parses a percent text field into a double, or null when blank.
+  double? _parsePercent(String text) {
+    final trimmed = text.trim();
+    if (trimmed.isEmpty) return null;
+    return double.tryParse(trimmed);
   }
 
   Future<void> _pickAndUploadImage() async {
@@ -169,7 +192,16 @@ class _HotelFormScreenState extends State<HotelFormScreen> {
       longitude: double.tryParse(_lngCtrl.text),
       coverImageUrl: _coverUrl,
       isActive: _isActive,
-      payOnProperty: _payOnProperty,
+      paymentMode: _paymentMode,
+      partialPercent3h: _paymentMode == HotelPaymentMode.payPartial
+          ? _parsePercent(_partial3hCtrl.text)
+          : null,
+      partialPercent6h: _paymentMode == HotelPaymentMode.payPartial
+          ? _parsePercent(_partial6hCtrl.text)
+          : null,
+      partialPercent24h: _paymentMode == HotelPaymentMode.payPartial
+          ? _parsePercent(_partial24hCtrl.text)
+          : null,
       checkInTime: _checkInTime,
       rating: _existingHotel?.rating ?? 0.0,
       createdAt: _existingHotel?.createdAt ?? DateTime.now(),
@@ -196,6 +228,149 @@ class _HotelFormScreenState extends State<HotelFormScreen> {
 
       if (mounted) context.go('/admin/hotels/${result.id}');
     }
+  }
+
+  /// A selectable radio row for one of the three payment modes.
+  Widget _paymentModeTile({
+    required HotelPaymentMode mode,
+    required String title,
+    required String subtitle,
+  }) {
+    final selected = _paymentMode == mode;
+    return InkWell(
+      onTap: () => setState(() => _paymentMode = mode),
+      borderRadius: BorderRadius.circular(8),
+      child: Padding(
+        padding: const EdgeInsets.symmetric(vertical: 4),
+        child: Row(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Radio<HotelPaymentMode>(
+              value: mode,
+              groupValue: _paymentMode,
+              activeColor: AppColors.primaryBurgundy,
+              onChanged: (v) => setState(() => _paymentMode = v!),
+            ),
+            const SizedBox(width: 4),
+            Expanded(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  const SizedBox(height: 10),
+                  Text(
+                    title,
+                    style: TextStyle(
+                      fontSize: 15,
+                      fontWeight: FontWeight.w600,
+                      color: selected
+                          ? AppColors.primaryBurgundy
+                          : AppColors.textPrimary,
+                    ),
+                  ),
+                  const SizedBox(height: 2),
+                  Text(
+                    subtitle,
+                    style: const TextStyle(
+                      fontSize: 13,
+                      color: AppColors.textSecondary,
+                    ),
+                  ),
+                ],
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
+  /// The three deposit-percentage inputs shown when "Pay partial" is selected.
+  Widget _buildPartialPercentFields(AppLocalizations l) {
+    return Container(
+      margin: const EdgeInsets.only(top: 12, left: 8),
+      padding: const EdgeInsets.all(16),
+      decoration: BoxDecoration(
+        color: AppColors.surfaceLight,
+        borderRadius: BorderRadius.circular(8),
+        border: Border.all(color: Colors.grey.shade300),
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Text(
+            l.hotelFormPartialPercentTitle,
+            style: const TextStyle(fontSize: 14, fontWeight: FontWeight.w600),
+          ),
+          const SizedBox(height: 4),
+          Text(
+            l.hotelFormPartialPercentSubtitle,
+            style: const TextStyle(
+              fontSize: 13,
+              color: AppColors.textSecondary,
+            ),
+          ),
+          const SizedBox(height: 12),
+          Row(
+            children: [
+              Expanded(
+                child: _partialPercentField(
+                  controller: _partial3hCtrl,
+                  label: l.hotelFormPartialPercent3h,
+                  l: l,
+                ),
+              ),
+              const SizedBox(width: 12),
+              Expanded(
+                child: _partialPercentField(
+                  controller: _partial6hCtrl,
+                  label: l.hotelFormPartialPercent6h,
+                  l: l,
+                ),
+              ),
+              const SizedBox(width: 12),
+              Expanded(
+                child: _partialPercentField(
+                  controller: _partial24hCtrl,
+                  label: l.hotelFormPartialPercent24h,
+                  l: l,
+                ),
+              ),
+            ],
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _partialPercentField({
+    required TextEditingController controller,
+    required String label,
+    required AppLocalizations l,
+  }) {
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        FormFieldLabel(label: label, isRequired: true),
+        TextFormField(
+          controller: controller,
+          keyboardType: const TextInputType.numberWithOptions(decimal: true),
+          decoration: const InputDecoration(
+            hintText: '0',
+            suffixText: '%',
+          ),
+          // Only validated while the "Pay partial" mode is active.
+          validator: (v) {
+            if (_paymentMode != HotelPaymentMode.payPartial) return null;
+            final parsed = _parsePercent(v ?? '');
+            if (parsed == null) return l.hotelFormRequired;
+            if (parsed < 0 || parsed > 100) {
+              return l.hotelFormPercentInvalid;
+            }
+            return null;
+          },
+        ),
+      ],
+    );
   }
 
   @override
@@ -552,14 +727,37 @@ class _HotelFormScreenState extends State<HotelFormScreen> {
                           activeColor: AppColors.primaryBurgundy,
                         ),
 
-                        SwitchListTile(
-                          value: _payOnProperty,
-                          onChanged: (v) => setState(() => _payOnProperty = v),
-                          title: Text(l.hotelFormPayOnPropertySwitch),
-                          subtitle: Text(l.hotelFormPayOnPropertySubtitle),
-                          contentPadding: EdgeInsets.zero,
-                          activeColor: AppColors.primaryBurgundy,
+                        const SizedBox(height: 8),
+                        const Divider(),
+                        const SizedBox(height: 8),
+
+                        // ─── Payment mode ─────────────────────────────────
+                        SectionHeader(title: l.hotelFormPaymentMode),
+                        Text(
+                          l.hotelFormPaymentModeSubtitle,
+                          style: const TextStyle(
+                            fontSize: 13,
+                            color: AppColors.textSecondary,
+                          ),
                         ),
+                        const SizedBox(height: 8),
+                        _paymentModeTile(
+                          mode: HotelPaymentMode.payAtProperty,
+                          title: l.hotelFormPayAtPropertyOption,
+                          subtitle: l.hotelFormPayAtPropertyDesc,
+                        ),
+                        _paymentModeTile(
+                          mode: HotelPaymentMode.payAtApp,
+                          title: l.hotelFormPayAtAppOption,
+                          subtitle: l.hotelFormPayAtAppDesc,
+                        ),
+                        _paymentModeTile(
+                          mode: HotelPaymentMode.payPartial,
+                          title: l.hotelFormPayPartialOption,
+                          subtitle: l.hotelFormPayPartialDesc,
+                        ),
+                        if (_paymentMode == HotelPaymentMode.payPartial)
+                          _buildPartialPercentFields(l),
 
                         const SizedBox(height: 16),
                         const Divider(),

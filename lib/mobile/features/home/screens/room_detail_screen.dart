@@ -10,6 +10,7 @@ import '../../reservation/providers/reservation_flow_provider.dart';
 import '../../profile/providers/profile_provider.dart';
 import '../../../widgets/image_carousel.dart';
 import '../../../widgets/amenities_grid.dart';
+import '../../../../domain/models/hotel.dart';
 import '../../../../domain/models/room.dart';
 import '../../../../domain/models/amenity.dart';
 
@@ -53,7 +54,10 @@ class _RoomDetailScreenState extends State<RoomDetailScreen> {
         price3h: room.price3h,
         price6h: room.price6h,
         price24h: room.price24h,
-        payOnProperty: hotel?.payOnProperty ?? false,
+        paymentMode: hotel?.paymentMode ?? HotelPaymentMode.payAtApp,
+        partialPercent3h: hotel?.partialPercent3h,
+        partialPercent6h: hotel?.partialPercent6h,
+        partialPercent24h: hotel?.partialPercent24h,
         checkInTime: hotel?.checkInTime,
       );
     }
@@ -145,90 +149,6 @@ class _RoomDetailScreenState extends State<RoomDetailScreen> {
         ),
       );
     }
-  }
-
-  void _showPaymentOptions(
-    BuildContext context,
-    ReservationFlowProvider provider,
-  ) {
-    final l10n = AppLocalizations.of(context);
-    showModalBottomSheet(
-      context: context,
-      backgroundColor: Colors.white,
-      shape: const RoundedRectangleBorder(
-        borderRadius: BorderRadius.vertical(top: Radius.circular(24)),
-      ),
-      builder:
-          (ctx) => SafeArea(
-            child: Padding(
-              padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 24),
-              child: Column(
-                mainAxisSize: MainAxisSize.min,
-                crossAxisAlignment: CrossAxisAlignment.stretch,
-                children: [
-                  Text(
-                    l10n?.paymentTitle ?? 'Método de pago',
-                    style: AppTextStyles.headingM,
-                    textAlign: TextAlign.center,
-                  ),
-                  const SizedBox(height: 8),
-                  Text(
-                    l10n?.paymentSubtitle ??
-                        'Seleccione un método de pago para garantizar su reserva.',
-                    style: AppTextStyles.bodyM.copyWith(
-                      color: AppColors.textSecondary,
-                    ),
-                    textAlign: TextAlign.center,
-                  ),
-                  const SizedBox(height: 24),
-                  ElevatedButton(
-                    onPressed: () {
-                      Navigator.pop(ctx);
-                      context.push('/payment');
-                    },
-                    style: ElevatedButton.styleFrom(
-                      backgroundColor: AppColors.primaryBurgundy,
-                      padding: const EdgeInsets.symmetric(vertical: 16),
-                      shape: RoundedRectangleBorder(
-                        borderRadius: BorderRadius.circular(28),
-                      ),
-                    ),
-                    child: Text(
-                      l10n?.payOnlineOption ?? 'Pagar en línea',
-                      style: AppTextStyles.labelM.copyWith(
-                        color: AppColors.textOnPrimary,
-                      ),
-                    ),
-                  ),
-                  const SizedBox(height: 12),
-                  OutlinedButton(
-                    onPressed: () {
-                      Navigator.pop(ctx);
-                      _reserveOnProperty(context);
-                    },
-                    style: OutlinedButton.styleFrom(
-                      foregroundColor: AppColors.primaryBurgundy,
-                      side: const BorderSide(
-                        color: AppColors.primaryBurgundy,
-                        width: 2,
-                      ),
-                      padding: const EdgeInsets.symmetric(vertical: 16),
-                      shape: RoundedRectangleBorder(
-                        borderRadius: BorderRadius.circular(28),
-                      ),
-                    ),
-                    child: Text(
-                      l10n?.payOnPropertyOption ?? 'Pagar en la propiedad',
-                      style: AppTextStyles.labelM.copyWith(
-                        color: AppColors.primaryBurgundy,
-                      ),
-                    ),
-                  ),
-                ],
-              ),
-            ),
-          ),
-    );
   }
 
   @override
@@ -471,8 +391,11 @@ class _RoomDetailScreenState extends State<RoomDetailScreen> {
                     provider.isLoading
                         ? null
                         : () {
-                          if (provider.payOnProperty) {
-                            _showPaymentOptions(context, provider);
+                          // Pay-at-property books without any online payment;
+                          // pay-at-app and pay-partial both go to checkout
+                          // (which charges the full price or the deposit).
+                          if (provider.isPayAtProperty) {
+                            _reserveOnProperty(context);
                           } else {
                             context.push('/payment');
                           }

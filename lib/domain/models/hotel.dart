@@ -2,6 +2,33 @@ import 'hotel_image.dart';
 import 'amenity.dart';
 import 'room.dart';
 
+/// How guests pay for a booking at a hotel. Exactly one mode is active per
+/// hotel and it is chosen by the admin when creating/editing the hotel.
+enum HotelPaymentMode {
+  /// Reserve without paying in the app; settle the full amount at the property.
+  payAtProperty('pay_at_property'),
+
+  /// Pay the full amount online up front; the booking is reserved only once the
+  /// payment completes.
+  payAtApp('pay_at_app'),
+
+  /// Pay a percentage online up front (the deposit) and the rest at the
+  /// property. The deposit percentage is configured per booking slot.
+  payPartial('pay_partial');
+
+  const HotelPaymentMode(this.dbValue);
+
+  /// Value stored in `hotels.payment_mode`.
+  final String dbValue;
+
+  static HotelPaymentMode fromDbValue(String? value) {
+    return HotelPaymentMode.values.firstWhere(
+      (m) => m.dbValue == value,
+      orElse: () => HotelPaymentMode.payAtApp,
+    );
+  }
+}
+
 class Hotel {
   final String id;
   final String name;
@@ -14,9 +41,18 @@ class Hotel {
   final String? coverImageUrl;
   final bool isActive;
 
-  /// When true, guests may reserve a room at this hotel without paying
-  /// upfront — they settle at the property on arrival.
-  final bool payOnProperty;
+  /// Which of the three payment modes is active for this hotel.
+  final HotelPaymentMode paymentMode;
+
+  /// Deposit percentages (0–100) charged online per booking slot when
+  /// [paymentMode] is [HotelPaymentMode.payPartial]. Null when not configured.
+  final double? partialPercent3h;
+  final double? partialPercent6h;
+  final double? partialPercent24h;
+
+  /// True when guests settle at the property (pay-at-property mode). Kept as a
+  /// convenience for the legacy `pay_on_property` concept.
+  bool get payOnProperty => paymentMode == HotelPaymentMode.payAtProperty;
 
   /// Earliest time guests can check in, stored as "HH:MM" (24-hour).
   /// When set, the reservation screen only shows time slots at or after
@@ -42,7 +78,10 @@ class Hotel {
     this.rating = 0.0,
     this.coverImageUrl,
     this.isActive = true,
-    this.payOnProperty = false,
+    this.paymentMode = HotelPaymentMode.payAtApp,
+    this.partialPercent3h,
+    this.partialPercent6h,
+    this.partialPercent24h,
     this.checkInTime,
     required this.createdAt,
     required this.updatedAt,
@@ -63,7 +102,22 @@ class Hotel {
       rating: json['rating'] != null ? (json['rating'] as num).toDouble() : 0.0,
       coverImageUrl: json['cover_image_url'] as String?,
       isActive: json['is_active'] as bool? ?? true,
-      payOnProperty: json['pay_on_property'] as bool? ?? false,
+      // Prefer the explicit payment_mode; fall back to the legacy boolean so
+      // rows written before this column existed still resolve correctly.
+      paymentMode: json['payment_mode'] != null
+          ? HotelPaymentMode.fromDbValue(json['payment_mode'] as String?)
+          : ((json['pay_on_property'] as bool? ?? false)
+              ? HotelPaymentMode.payAtProperty
+              : HotelPaymentMode.payAtApp),
+      partialPercent3h: json['partial_percent_3h'] != null
+          ? (json['partial_percent_3h'] as num).toDouble()
+          : null,
+      partialPercent6h: json['partial_percent_6h'] != null
+          ? (json['partial_percent_6h'] as num).toDouble()
+          : null,
+      partialPercent24h: json['partial_percent_24h'] != null
+          ? (json['partial_percent_24h'] as num).toDouble()
+          : null,
       checkInTime: json['check_in_time'] as String?,
       createdAt: DateTime.parse(json['created_at']),
       updatedAt: DateTime.parse(json['updated_at']),
@@ -91,6 +145,11 @@ class Hotel {
       'rating': rating,
       if (coverImageUrl != null) 'cover_image_url': coverImageUrl,
       'is_active': isActive,
+      'payment_mode': paymentMode.dbValue,
+      'partial_percent_3h': partialPercent3h,
+      'partial_percent_6h': partialPercent6h,
+      'partial_percent_24h': partialPercent24h,
+      // Mirror the legacy boolean so older readers keep working.
       'pay_on_property': payOnProperty,
       'check_in_time': checkInTime,
       'created_at': createdAt.toIso8601String(),
@@ -109,7 +168,10 @@ class Hotel {
     double? rating,
     String? coverImageUrl,
     bool? isActive,
-    bool? payOnProperty,
+    HotelPaymentMode? paymentMode,
+    double? partialPercent3h,
+    double? partialPercent6h,
+    double? partialPercent24h,
     String? checkInTime,
     DateTime? createdAt,
     DateTime? updatedAt,
@@ -128,7 +190,10 @@ class Hotel {
       rating: rating ?? this.rating,
       coverImageUrl: coverImageUrl ?? this.coverImageUrl,
       isActive: isActive ?? this.isActive,
-      payOnProperty: payOnProperty ?? this.payOnProperty,
+      paymentMode: paymentMode ?? this.paymentMode,
+      partialPercent3h: partialPercent3h ?? this.partialPercent3h,
+      partialPercent6h: partialPercent6h ?? this.partialPercent6h,
+      partialPercent24h: partialPercent24h ?? this.partialPercent24h,
       checkInTime: checkInTime ?? this.checkInTime,
       createdAt: createdAt ?? this.createdAt,
       updatedAt: updatedAt ?? this.updatedAt,

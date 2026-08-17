@@ -3,6 +3,7 @@ import 'package:go_router/go_router.dart';
 import 'package:provider/provider.dart';
 import 'package:flutter_gen/gen_l10n/app_localizations.dart';
 import '../../../../core/theme/app_colors.dart';
+import '../../../../core/utils/payment_mode_label.dart';
 import '../../../core/widgets/status_badge.dart';
 import '../../../core/widgets/section_header.dart';
 import '../../../core/widgets/kpi_card.dart';
@@ -75,12 +76,27 @@ class _ReservationDetailScreenState extends State<ReservationDetailScreen> {
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
                 SectionHeader(title: l.reservationDetailPayment),
+                if (res.paymentMode != null)
+                  _InfoRow(
+                    label: l.hotelFormPaymentMode,
+                    value: reservationPaymentModeLabel(l, res.paymentMode),
+                  ),
                 _InfoRow(
                   label: l.reservationDetailPaymentProvider,
                   value: res.paymentProvider == 'pay_on_property'
                       ? (l.payOnPropertyOption)
                       : (res.paymentProvider?.toUpperCase() ?? '—'),
                 ),
+                if (res.depositAmount != null)
+                  _InfoRow(
+                    label: l.reservationDetailDepositPaid,
+                    value: '\$${res.depositAmount!.toStringAsFixed(2)}',
+                  ),
+                if (res.balanceDue != null && res.balanceDue! > 0)
+                  _InfoRow(
+                    label: l.reservationDetailBalanceDue,
+                    value: '\$${res.balanceDue!.toStringAsFixed(2)}',
+                  ),
                 _InfoRow(
                   label: l.reservationDetailPaymentStatus,
                   value: res.paymentStatus == 'completed'

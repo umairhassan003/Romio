@@ -3,6 +3,7 @@ import 'package:go_router/go_router.dart';
 import 'package:provider/provider.dart';
 import 'package:flutter_gen/gen_l10n/app_localizations.dart';
 import '../../../../core/theme/app_colors.dart';
+import '../../../../core/utils/payment_mode_label.dart';
 import '../../../core/widgets/romio_data_table.dart';
 import '../../../core/widgets/status_badge.dart';
 import '../../../core/widgets/error_banner.dart';
@@ -79,7 +80,7 @@ class _HotelListScreenState extends State<HotelListScreen> {
                 DataColumn(label: Text(l.hotelColCity)),
                 DataColumn(label: Text(l.hotelColRooms)),
                 DataColumn(label: Text(l.hotelColRating)),
-                DataColumn(label: Text(l.hotelColPayOnProperty)),
+                DataColumn(label: Text(l.hotelFormPaymentMode)),
                 DataColumn(label: Text(l.hotelColStatus)),
                 DataColumn(label: Text(l.hotelColActions)),
               ],
@@ -108,7 +109,7 @@ class _HotelListScreenState extends State<HotelListScreen> {
                       Text(hotel.rating.toStringAsFixed(1)),
                     ],
                   )),
-                  DataCell(StatusBadge(status: hotel.payOnProperty ? 'enabled' : 'disabled')),
+                  DataCell(Text(hotelPaymentModeLabel(l, hotel.paymentMode))),
                   DataCell(StatusBadge(status: hotel.isActive ? 'active' : 'inactive')),
                   DataCell(Row(
                     mainAxisSize: MainAxisSize.min,

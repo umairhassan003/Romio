@@ -3,6 +3,8 @@ import 'package:go_router/go_router.dart';
 import 'package:provider/provider.dart';
 import 'package:flutter_gen/gen_l10n/app_localizations.dart';
 import '../../../../core/theme/app_colors.dart';
+import '../../../../core/utils/payment_mode_label.dart';
+import '../../../../domain/models/hotel.dart';
 import '../../../core/widgets/status_badge.dart';
 import '../../../core/widgets/section_header.dart';
 import '../../../core/widgets/confirm_dialog.dart';
@@ -24,6 +26,14 @@ class _HotelDetailScreenState extends State<HotelDetailScreen> {
     WidgetsBinding.instance.addPostFrameCallback((_) {
       context.read<HotelAdminProvider>().loadHotelById(widget.id);
     });
+  }
+
+  /// Formats a deposit percentage for display (e.g. 8.0 -> "8%").
+  String _percentText(double? value) {
+    if (value == null) return '—';
+    final text =
+        value == value.roundToDouble() ? value.toStringAsFixed(0) : '$value';
+    return '$text%';
   }
 
   void _showImageLightbox(String imageUrl) {
@@ -183,9 +193,17 @@ class _HotelDetailScreenState extends State<HotelDetailScreen> {
                   _InfoRow(label: l.hotelDetailLatitude, value: hotel.latitude?.toString() ?? '—'),
                   _InfoRow(label: l.hotelDetailLongitude, value: hotel.longitude?.toString() ?? '—'),
                   _InfoRow(
-                    label: l.hotelDetailPayOnProperty,
-                    value: hotel.payOnProperty ? l.adminEnabled : l.adminDisabled,
+                    label: l.hotelFormPaymentMode,
+                    value: hotelPaymentModeLabel(l, hotel.paymentMode),
                   ),
+                  if (hotel.paymentMode == HotelPaymentMode.payPartial)
+                    _InfoRow(
+                      label: l.hotelFormPartialPercentTitle,
+                      value:
+                          '3h: ${_percentText(hotel.partialPercent3h)} · '
+                          '6h: ${_percentText(hotel.partialPercent6h)} · '
+                          '24h: ${_percentText(hotel.partialPercent24h)}',
+                    ),
                   if (hotel.description != null && hotel.description!.isNotEmpty) ...[
                     const Divider(),
                     SectionHeader(title: l.hotelDetailDescription),

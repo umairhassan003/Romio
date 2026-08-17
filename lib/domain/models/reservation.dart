@@ -8,6 +8,18 @@ class Reservation {
   final String checkOutTime;
   final int durationHours;
   final double totalPrice;
+
+  /// Which payment mode this booking used:
+  /// 'pay_at_property' | 'pay_at_app' | 'pay_partial'.
+  final String? paymentMode;
+
+  /// Amount paid online up front (full for pay_at_app, the deposit for
+  /// pay_partial, 0 for pay_at_property).
+  final double? depositAmount;
+
+  /// Amount still to be collected at the property (0 for pay_at_app).
+  final double? balanceDue;
+
   final String status;
   final DateTime? cancelledAt;
   final DateTime createdAt;
@@ -35,6 +47,9 @@ class Reservation {
     required this.checkOutTime,
     required this.durationHours,
     required this.totalPrice,
+    this.paymentMode,
+    this.depositAmount,
+    this.balanceDue,
     this.status = 'pending',
     this.cancelledAt,
     required this.createdAt,
@@ -85,6 +100,13 @@ class Reservation {
       checkOutTime: json['check_out_time'] as String,
       durationHours: json['duration_hours'] as int,
       totalPrice: (json['total_price'] as num).toDouble(),
+      paymentMode: json['payment_mode'] as String?,
+      depositAmount: json['deposit_amount'] != null
+          ? (json['deposit_amount'] as num).toDouble()
+          : null,
+      balanceDue: json['balance_due'] != null
+          ? (json['balance_due'] as num).toDouble()
+          : null,
       status: json['status'] as String? ?? 'pending',
       cancelledAt: json['cancelled_at'] != null ? DateTime.parse(json['cancelled_at']) : null,
       createdAt: DateTime.parse(json['created_at']),
@@ -109,6 +131,9 @@ class Reservation {
       'check_out_time': checkOutTime,
       'duration_hours': durationHours,
       'total_price': totalPrice,
+      if (paymentMode != null) 'payment_mode': paymentMode,
+      if (depositAmount != null) 'deposit_amount': depositAmount,
+      if (balanceDue != null) 'balance_due': balanceDue,
       'status': status,
       if (cancelledAt != null) 'cancelled_at': cancelledAt!.toIso8601String(),
       'created_at': createdAt.toIso8601String(),
@@ -126,6 +151,9 @@ class Reservation {
     String? checkOutTime,
     int? durationHours,
     double? totalPrice,
+    String? paymentMode,
+    double? depositAmount,
+    double? balanceDue,
     String? status,
     DateTime? cancelledAt,
     DateTime? createdAt,
@@ -147,6 +175,9 @@ class Reservation {
       checkOutTime: checkOutTime ?? this.checkOutTime,
       durationHours: durationHours ?? this.durationHours,
       totalPrice: totalPrice ?? this.totalPrice,
+      paymentMode: paymentMode ?? this.paymentMode,
+      depositAmount: depositAmount ?? this.depositAmount,
+      balanceDue: balanceDue ?? this.balanceDue,
       status: status ?? this.status,
       cancelledAt: cancelledAt ?? this.cancelledAt,
       createdAt: createdAt ?? this.createdAt,

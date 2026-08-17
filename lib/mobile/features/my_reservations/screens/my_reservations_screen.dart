@@ -214,22 +214,27 @@ class _ReservationCard extends StatelessWidget {
                 ],
               ),
               const Spacer(),
-              Column(
-                crossAxisAlignment: CrossAxisAlignment.end,
-                children: [
-                  Text(
-                    'Recuérdamelo',
-                    style: AppTextStyles.caption.copyWith(
-                      color: AppColors.textPrimary,
+              Flexible(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.end,
+                  children: [
+                    Text(
+                      'Recuérdamelo',
+                      style: AppTextStyles.caption.copyWith(
+                        color: AppColors.textPrimary,
+                      ),
                     ),
-                  ),
-                  Text(
-                    roomName,
-                    style: AppTextStyles.caption.copyWith(
-                      color: AppColors.textSecondary,
+                    Text(
+                      roomName,
+                      textAlign: TextAlign.end,
+                      maxLines: 1,
+                      overflow: TextOverflow.ellipsis,
+                      style: AppTextStyles.caption.copyWith(
+                        color: AppColors.textSecondary,
+                      ),
                     ),
-                  ),
-                ],
+                  ],
+                ),
               ),
               const SizedBox(width: 4),
               Switch(
@@ -331,7 +336,13 @@ class _ReservationCard extends StatelessWidget {
     String label;
     IconData icon;
 
-    if (providerKey == 'pay_on_property') {
+    if (reservation.paymentMode == 'pay_partial') {
+      color = AppColors.primaryBurgundy;
+      final balance = reservation.balanceDue ?? 0;
+      label = l10n?.paymentStatusPartial(balance.toStringAsFixed(0)) ??
+          'Depósito pagado · \$${balance.toStringAsFixed(0)} en la propiedad';
+      icon = Icons.pie_chart_outline;
+    } else if (providerKey == 'pay_on_property') {
       color = AppColors.warning;
       label = l10n?.paymentStatusPayAtProperty ?? 'Pago en la propiedad';
       icon = Icons.store_mall_directory_outlined;

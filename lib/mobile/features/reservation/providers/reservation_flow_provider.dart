@@ -4,6 +4,7 @@ import 'package:flutter/foundation.dart';
 import '../../../../core/constants/payment_constants.dart';
 import '../../../../core/constants/notification_constants.dart';
 import '../../../../data/services/email_service.dart';
+import '../../../../domain/models/hotel.dart';
 import '../../../../domain/models/reservation.dart';
 import '../../../../domain/models/payment.dart';
 import '../../../../domain/gateways/payment_gateway.dart';
@@ -37,7 +38,10 @@ class ReservationFlowProvider extends ChangeNotifier {
   double? _price3h;
   double? _price6h;
   double? _price24h;
-  bool _payOnProperty = false;
+  HotelPaymentMode _paymentMode = HotelPaymentMode.payAtApp;
+  double? _partialPercent3h;
+  double? _partialPercent6h;
+  double? _partialPercent24h;
   String? _checkInTime;
   DateTime _selectedDate = DateTime.now();
   String _selectedTime = '14:00';
@@ -63,7 +67,17 @@ class ReservationFlowProvider extends ChangeNotifier {
   String? get selectedRoomId => _selectedRoomId;
   String? get roomName => _roomName;
   String? get hotelName => _hotelName;
-  bool get payOnProperty => _payOnProperty;
+  HotelPaymentMode get paymentMode => _paymentMode;
+
+  /// Whether the guest settles the full amount at the property (no online pay).
+  bool get isPayAtProperty => _paymentMode == HotelPaymentMode.payAtProperty;
+
+  /// Whether the guest must pay the full amount online up front.
+  bool get isPayAtApp => _paymentMode == HotelPaymentMode.payAtApp;
+
+  /// Whether the guest pays a deposit online and the rest at the property.
+  bool get isPayPartial => _paymentMode == HotelPaymentMode.payPartial;
+
   DateTime get selectedDate => _selectedDate;
   String get selectedTime => _selectedTime;
   int get duration => _duration;
@@ -107,6 +121,42 @@ class ReservationFlowProvider extends ChangeNotifier {
 
   double get totalPrice => priceForSlot(_duration);
 
+  /// Deposit percentage (0–100) configured for the currently selected slot when
+  /// the hotel uses partial payment. Returns 0 when not applicable/configured.
+  double get partialPercentForSlot {
+    switch (_duration) {
+      case 3:
+        return _partialPercent3h ?? 0;
+      case 6:
+        return _partialPercent6h ?? 0;
+      case 24:
+        return _partialPercent24h ?? 0;
+      default:
+        return _partialPercent3h ?? 0;
+    }
+  }
+
+  /// Amount the guest pays online now:
+  /// - pay at property → 0 (nothing charged online)
+  /// - pay at app      → the full price
+  /// - pay partial     → the deposit (price × slot percentage)
+  double get amountDueNow {
+    switch (_paymentMode) {
+      case HotelPaymentMode.payAtProperty:
+        return 0;
+      case HotelPaymentMode.payAtApp:
+        return totalPrice;
+      case HotelPaymentMode.payPartial:
+        return _round2(totalPrice * partialPercentForSlot / 100);
+    }
+  }
+
+  /// Amount still to be collected at the property (full price for pay at
+  /// property, the remainder for pay partial, 0 for pay at app).
+  double get balanceDueAtProperty => _round2(totalPrice - amountDueNow);
+
+  double _round2(double v) => (v * 100).roundToDouble() / 100;
+
   String get checkOutTime {
     final parts = _selectedTime.split(':');
     final hour = (int.parse(parts[0]) + _duration) % 24;
@@ -123,7 +173,10 @@ class ReservationFlowProvider extends ChangeNotifier {
     double? price3h,
     double? price6h,
     double? price24h,
-    bool payOnProperty = false,
+    HotelPaymentMode paymentMode = HotelPaymentMode.payAtApp,
+    double? partialPercent3h,
+    double? partialPercent6h,
+    double? partialPercent24h,
     String? checkInTime,
   }) {
     _selectedRoomId = roomId;
@@ -134,7 +187,10 @@ class ReservationFlowProvider extends ChangeNotifier {
     _price3h = price3h;
     _price6h = price6h;
     _price24h = price24h;
-    _payOnProperty = payOnProperty;
+    _paymentMode = paymentMode;
+    _partialPercent3h = partialPercent3h;
+    _partialPercent6h = partialPercent6h;
+    _partialPercent24h = partialPercent24h;
     _checkInTime = checkInTime;
     // Default to first available slot
     final slots = availableSlots;
@@ -193,9 +249,13 @@ class ReservationFlowProvider extends ChangeNotifier {
       final code = _generateCode();
       final method = PaymentMethodType.fromKey(_selectedPaymentMethod);
 
+      // For pay-partial only the deposit is charged online; the balance is
+      // collected at the property. For pay-at-app the full price is charged.
+      final chargeAmount = amountDueNow;
+
       final result = await _paymentGateway.charge(
         PaymentChargeRequest(
-          amount: totalPrice,
+          amount: chargeAmount,
           currency: PaymentConstants.currency,
           method: method,
           reservationCode: code,
@@ -214,6 +274,9 @@ class ReservationFlowProvider extends ChangeNotifier {
         code: code,
         provider: method.providerKey,
         paymentStatus: result.status,
+        paymentAmount: chargeAmount,
+        depositAmount: chargeAmount,
+        balanceDue: balanceDueAtProperty,
         providerReference: result.providerReference,
         paidAt: result.status == 'completed' ? DateTime.now() : null,
         clientEmail: clientEmail,
@@ -244,6 +307,9 @@ class ReservationFlowProvider extends ChangeNotifier {
         code: _generateCode(),
         provider: 'pay_on_property',
         paymentStatus: 'pending',
+        paymentAmount: totalPrice,
+        depositAmount: 0,
+        balanceDue: totalPrice,
         providerReference: null,
         paidAt: null,
       );
@@ -263,6 +329,9 @@ class ReservationFlowProvider extends ChangeNotifier {
     required String code,
     required String provider,
     required String paymentStatus,
+    required double paymentAmount,
+    required double depositAmount,
+    required double balanceDue,
     String? providerReference,
     DateTime? paidAt,
     String clientEmail = '',
@@ -280,6 +349,9 @@ class ReservationFlowProvider extends ChangeNotifier {
       checkOutTime: checkOutTime,
       durationHours: _duration,
       totalPrice: totalPrice,
+      paymentMode: _paymentMode.dbValue,
+      depositAmount: depositAmount,
+      balanceDue: balanceDue,
       status: 'confirmed',
       createdAt: now,
       updatedAt: now,
@@ -294,7 +366,7 @@ class ReservationFlowProvider extends ChangeNotifier {
     final payment = Payment(
       id: '',
       reservationId: createdRes.id,
-      amount: totalPrice,
+      amount: paymentAmount,
       currency: PaymentConstants.currency,
       provider: provider,
       status: paymentStatus,
@@ -381,7 +453,10 @@ class ReservationFlowProvider extends ChangeNotifier {
     _price3h = null;
     _price6h = null;
     _price24h = null;
-    _payOnProperty = false;
+    _paymentMode = HotelPaymentMode.payAtApp;
+    _partialPercent3h = null;
+    _partialPercent6h = null;
+    _partialPercent24h = null;
     _checkInTime = null;
     _selectedDate = DateTime.now();
     _selectedTime = '14:00';
