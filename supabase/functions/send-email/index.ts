@@ -3,12 +3,9 @@
 /// <reference lib="deno.ns" />
 
 import "jsr:@supabase/functions-js/edge-runtime.d.ts";
-import { SmtpClient } from "https://deno.land/x/smtp@v0.7.0/mod.ts";
 
-const SMTP_HOST = Deno.env.get("SMTP_HOST") ?? "smtp.porkbun.app";
-const SMTP_PORT = parseInt(Deno.env.get("SMTP_PORT") ?? "587", 10);
-const SMTP_EMAIL = Deno.env.get("SMTP_EMAIL") ?? "info@getromio.app";
-const SMTP_PASSWORD = Deno.env.get("SMTP_PASSWORD") ?? "";
+const RESEND_API_KEY = Deno.env.get("RESEND_API_KEY") ?? "";
+const FROM_EMAIL = Deno.env.get("FROM_EMAIL") ?? "info@getromio.app";
 
 const CORS = {
   "Access-Control-Allow-Origin": "*",
@@ -87,7 +84,7 @@ function buildHotelEmail(data: any): { subject: string; html: string } {
     <h2>Nueva reserva recibida</h2>
     <p>Hola,</p>
     <p>Has recibido una nueva reserva a través de <strong>Romio</strong>.</p>
-    
+
     <div class="detail-card">
       <h3 style="color: ${BRAND_COLOR}; margin-top: 0; margin-bottom: 16px;">Detalles de la reserva</h3>
       <table width="100%" cellpadding="0" cellspacing="0" style="font-size: 14px;">
@@ -109,7 +106,7 @@ function buildHotelEmail(data: any): { subject: string; html: string } {
         </tr>
       </table>
     </div>
-    
+
     <p>Por favor, asegúrate de mantener la habitación disponible según las condiciones acordadas.</p>
     <p>Para cualquier incidencia, puedes contactar con el equipo de Romio.</p>
     <p style="margin-top: 24px;">Gracias por colaborar con nosotros,<br><strong>Equipo Romio</strong></p>
@@ -131,13 +128,13 @@ function buildClientEmail(data: any): { subject: string; html: string } {
     <h2>¡Tu reserva está confirmada! 💜</h2>
     <p>Hola,</p>
     <p>Gracias por elegir <strong>Romio</strong> para tu próxima experiencia.</p>
-    
+
     <p style="text-align: center; margin: 24px 0;">
       <span class="reservation-code">${data.reservation_code || "RM-0000"}</span>
     </p>
-    
+
     ${imageHtml}
-    
+
     <div class="detail-card">
       <h3 style="color: ${BRAND_COLOR}; margin-top: 0; margin-bottom: 16px;">Detalles de tu reserva</h3>
       <table width="100%" cellpadding="0" cellspacing="0" style="font-size: 14px;">
@@ -171,7 +168,7 @@ function buildClientEmail(data: any): { subject: string; html: string } {
         </tr>
       </table>
     </div>
-    
+
     <div class="info-box">
       <h3>📋 Información importante</h3>
       <p><strong>Hora de llegada</strong><br>
@@ -183,7 +180,7 @@ function buildClientEmail(data: any): { subject: string; html: string } {
       <p><strong>Documento de identidad</strong><br>
       Para realizar el check-in, deberás presentar un documento de identidad válido.</p>
     </div>
-    
+
     <p>El hotel ya ha sido notificado y te estará esperando en el horario indicado.</p>
     <p>Si tienes alguna duda sobre tu reserva, puedes escribirnos a <a href="mailto:info@getromio.app" style="color: ${BRAND_COLOR};">info@getromio.app</a>.</p>
     <p style="margin-top: 24px;">Disfruta el momento. Nosotros nos encargamos del resto. 💜<br><strong>Romio App</strong></p>
@@ -195,30 +192,30 @@ function buildClientEmail(data: any): { subject: string; html: string } {
   };
 }
 
-// ─── SMTP send ──────────────────────────────────────────────────────
+// ─── Send via Resend HTTP API ───────────────────────────────────────
 async function sendEmail(
   to: string,
   subject: string,
   html: string,
 ): Promise<void> {
-  const client = new SmtpClient();
-
-  await client.connectTLS({
-    hostname: SMTP_HOST,
-    port: SMTP_PORT,
-    username: SMTP_EMAIL,
-    password: SMTP_PASSWORD,
+  const response = await fetch("https://api.resend.com/emails", {
+    method: "POST",
+    headers: {
+      "Authorization": `Bearer ${RESEND_API_KEY}`,
+      "Content-Type": "application/json",
+    },
+    body: JSON.stringify({
+      from: `Romio <${FROM_EMAIL}>`,
+      to: [to],
+      subject,
+      html,
+    }),
   });
 
-  await client.send({
-    from: `Romio <${SMTP_EMAIL}>`,
-    to,
-    subject,
-    content: "This email requires an HTML-capable viewer.",
-    html,
-  });
-
-  await client.close();
+  if (!response.ok) {
+    const error = await response.text();
+    throw new Error(`Resend API error ${response.status}: ${error}`);
+  }
 }
 
 // ─── Main handler ───────────────────────────────────────────────────
@@ -229,11 +226,12 @@ Deno.serve(async (req) => {
   if (req.method !== "POST") {
     return jsonResp({ status: "error", message: "Method not allowed" }, 405);
   }
-  if (!SMTP_PASSWORD) {
+  if (!RESEND_API_KEY) {
+    console.error("send-email: RESEND_API_KEY secret is not set");
     return jsonResp({
       status: "error",
-      message: "SMTP credentials not configured.",
-    });
+      message: "Email service not configured (missing RESEND_API_KEY).",
+    }, 500);
   }
 
   try {
@@ -244,7 +242,7 @@ Deno.serve(async (req) => {
       return jsonResp({
         status: "error",
         message: "Missing required fields: type, to",
-      });
+      }, 400);
     }
 
     let email: { subject: string; html: string };
@@ -260,10 +258,11 @@ Deno.serve(async (req) => {
         return jsonResp({
           status: "error",
           message: `Unknown email type: ${type}`,
-        });
+        }, 400);
     }
 
     await sendEmail(to, email.subject, email.html);
+    console.log(`send-email: ${type} sent to ${to}`);
 
     return jsonResp({ status: "sent" });
   } catch (e) {
@@ -271,6 +270,6 @@ Deno.serve(async (req) => {
     return jsonResp({
       status: "error",
       message: `Failed to send email: ${e}`,
-    });
+    }, 500);
   }
 });

@@ -294,7 +294,11 @@ class ReservationFlowProvider extends ChangeNotifier {
     }
   }
 
-  Future<bool> reserveOnProperty(String profileId) async {
+  Future<bool> reserveOnProperty(
+    String profileId, {
+    required String clientEmail,
+    required String clientName,
+  }) async {
     if (_selectedRoomId == null) return false;
 
     _isLoading = true;
@@ -312,6 +316,8 @@ class ReservationFlowProvider extends ChangeNotifier {
         balanceDue: totalPrice,
         providerReference: null,
         paidAt: null,
+        clientEmail: clientEmail,
+        clientName: clientName,
       );
       return true;
     } catch (e) {
@@ -382,16 +388,11 @@ class ReservationFlowProvider extends ChangeNotifier {
       paidAt: paidAt,
     );
 
-    // Only a completed (paid) booking triggers the confirmation emails — the
-    // guest is told "payment confirmed", so pending / pay-on-property bookings
-    // are intentionally excluded here.
-    if (paymentStatus == 'completed') {
-      _sendConfirmationEmails(
-        code: code,
-        clientEmail: clientEmail,
-        clientName: clientName,
-      );
-    }
+    _sendConfirmationEmails(
+      code: code,
+      clientEmail: clientEmail,
+      clientName: clientName,
+    );
   }
 
   /// Fires the guest confirmation and hotel notification emails after a paid

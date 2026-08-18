@@ -6,6 +6,7 @@ import 'package:go_router/go_router.dart';
 import 'package:flutter_gen/gen_l10n/app_localizations.dart';
 import '../providers/reservation_flow_provider.dart';
 import '../../profile/providers/profile_provider.dart';
+import '../../auth/providers/auth_provider.dart';
 import '../../../widgets/app_calendar.dart';
 
 class ReservationScreen extends StatelessWidget {
@@ -92,7 +93,7 @@ class ReservationScreen extends StatelessWidget {
             final slots = provider.availableSlots;
             if (slots.isEmpty) {
               return Text(
-                'No hay opciones de reserva disponibles.',
+                l10n?.reservationNoSlotsAvailable ?? 'No booking options available.',
                 style: AppTextStyles.bodyM.copyWith(color: AppColors.textSecondary),
               );
             }
@@ -208,13 +209,21 @@ class ReservationScreen extends StatelessWidget {
   Future<void> _reserveOnProperty(BuildContext context) async {
     final l10n = AppLocalizations.of(context);
     final provider = context.read<ReservationFlowProvider>();
-    final profileId = context.read<ProfileProvider>().profile?.id;
+    final profile = context.read<ProfileProvider>().profile;
+    final profileId = profile?.id;
     if (profileId == null) {
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(content: Text(l10n?.paymentProfileError ?? 'Error: perfil no cargado')));
       return;
     }
-    final success = await provider.reserveOnProperty(profileId);
+    final clientEmail = context.read<AuthProvider>().user?.email ?? '';
+    final clientName =
+        '${profile?.firstName ?? ''} ${profile?.lastName ?? ''}'.trim();
+    final success = await provider.reserveOnProperty(
+      profileId,
+      clientEmail: clientEmail,
+      clientName: clientName,
+    );
     if (success && context.mounted) {
       context.go('/confirmation');
     } else if (context.mounted) {

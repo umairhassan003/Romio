@@ -528,6 +528,7 @@
     "reservationDetailBalanceDue": "Balance at Property",
     "reservationPayPartialNote": "Pay ${now} now and ${atProperty} at the property.",
     "@reservationPayPartialNote": { "placeholders": { "now": { "type": "String" }, "atProperty": { "type": "String" } } },
+    "reservationNoSlotsAvailable": "No booking options available.",
     "reservationPayDeposit": "Pay deposit · ${amount}",
     "@reservationPayDeposit": { "placeholders": { "amount": { "type": "String" } } },
     "paymentDepositNowLabel": "Deposit due now",

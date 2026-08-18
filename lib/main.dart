@@ -17,6 +17,7 @@ import 'data/repositories/supabase_reservation_repository.dart';
 import 'data/repositories/supabase_payment_repository.dart';
 import 'data/gateways/paypal_payment_gateway.dart';
 import 'data/services/email_service.dart';
+import 'data/services/smtp_credential_store.dart';
 import 'domain/gateways/payment_gateway.dart';
 
 // Feature Providers
@@ -45,6 +46,10 @@ Future<void> main() async {
     anonKey: SupabaseConstants.supabaseAnonKey,
   );
 
+  // Seed SMTP password into secure storage on first launch
+  final smtpCredentialStore = SmtpCredentialStore();
+  await smtpCredentialStore.bootstrap();
+
   if (kIsWeb) {
     runApp(
       MultiProvider(
@@ -53,12 +58,13 @@ Future<void> main() async {
       ),
     );
   } else {
-    runApp(const MyApp());
+    runApp(MyApp(smtpCredentialStore: smtpCredentialStore));
   }
 }
 
 class MyApp extends StatelessWidget {
-  const MyApp({super.key});
+  final SmtpCredentialStore smtpCredentialStore;
+  const MyApp({super.key, required this.smtpCredentialStore});
 
   @override
   Widget build(BuildContext context) {
@@ -76,7 +82,7 @@ class MyApp extends StatelessWidget {
         Provider<PaymentGateway>(create: (_) => PayPalPaymentGateway()),
 
         // Transactional email (guest confirmation + hotel notification)
-        Provider<EmailService>(create: (_) => EmailService()),
+        Provider<EmailService>(create: (_) => EmailService(credentialStore: smtpCredentialStore)),
 
         // Locale Provider (language switching)
         ChangeNotifierProvider(create: (_) => LocaleProvider()),

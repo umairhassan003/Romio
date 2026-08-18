@@ -8,6 +8,7 @@ import '../../../../core/theme/app_text_styles.dart';
 import '../providers/home_provider.dart';
 import '../../reservation/providers/reservation_flow_provider.dart';
 import '../../profile/providers/profile_provider.dart';
+import '../../auth/providers/auth_provider.dart';
 import '../../../widgets/image_carousel.dart';
 import '../../../widgets/amenities_grid.dart';
 import '../../../../domain/models/hotel.dart';
@@ -125,7 +126,8 @@ class _RoomDetailScreenState extends State<RoomDetailScreen> {
   Future<void> _reserveOnProperty(BuildContext context) async {
     final l10n = AppLocalizations.of(context);
     final provider = context.read<ReservationFlowProvider>();
-    final profileId = context.read<ProfileProvider>().profile?.id;
+    final profile = context.read<ProfileProvider>().profile;
+    final profileId = profile?.id;
     if (profileId == null) {
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
@@ -136,7 +138,14 @@ class _RoomDetailScreenState extends State<RoomDetailScreen> {
       );
       return;
     }
-    final success = await provider.reserveOnProperty(profileId);
+    final clientEmail = context.read<AuthProvider>().user?.email ?? '';
+    final clientName =
+        '${profile?.firstName ?? ''} ${profile?.lastName ?? ''}'.trim();
+    final success = await provider.reserveOnProperty(
+      profileId,
+      clientEmail: clientEmail,
+      clientName: clientName,
+    );
     if (success && context.mounted) {
       context.go('/confirmation');
     } else if (context.mounted) {

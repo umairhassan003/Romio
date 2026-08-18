@@ -528,6 +528,7 @@
     "reservationDetailBalanceDue": "Saldo en la Propiedad",
     "reservationPayPartialNote": "Paga ${now} ahora y ${atProperty} en la propiedad.",
     "@reservationPayPartialNote": { "placeholders": { "now": { "type": "String" }, "atProperty": { "type": "String" } } },
+    "reservationNoSlotsAvailable": "No hay opciones de reserva disponibles.",
     "reservationPayDeposit": "Pagar depósito · ${amount}",
     "@reservationPayDeposit": { "placeholders": { "amount": { "type": "String" } } },
     "paymentDepositNowLabel": "Depósito a pagar ahora",
