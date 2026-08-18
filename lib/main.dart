@@ -18,6 +18,7 @@ import 'data/repositories/supabase_payment_repository.dart';
 import 'data/gateways/paypal_payment_gateway.dart';
 import 'data/services/email_service.dart';
 import 'data/services/smtp_credential_store.dart';
+import 'data/services/notification_service.dart';
 import 'domain/gateways/payment_gateway.dart';
 
 // Feature Providers
@@ -28,6 +29,7 @@ import 'mobile/features/home/providers/home_provider.dart';
 import 'mobile/features/my_reservations/providers/my_reservations_provider.dart';
 import 'mobile/features/reservation/providers/reservation_flow_provider.dart';
 import 'mobile/features/payment/providers/card_wallet_provider.dart';
+import 'mobile/features/notifications/providers/notifications_provider.dart';
 
 /* 
  * Romio - Hotel Booking App
@@ -58,6 +60,8 @@ Future<void> main() async {
       ),
     );
   } else {
+    // Initialize device notifications (booking confirmations, etc.).
+    await NotificationService.instance.init();
     runApp(MyApp(smtpCredentialStore: smtpCredentialStore));
   }
 }
@@ -89,6 +93,9 @@ class MyApp extends StatelessWidget {
 
         // In-memory saved-card wallet (session only — not persisted)
         ChangeNotifierProvider(create: (_) => CardWalletProvider()),
+
+        // In-app notification center (booking confirmations, persisted per user)
+        ChangeNotifierProvider(create: (_) => NotificationsProvider()),
 
         // Inject Feature Providers (State Management)
         ChangeNotifierProvider(

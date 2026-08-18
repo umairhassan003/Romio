@@ -23,6 +23,7 @@ import '../../mobile/features/profile/screens/contact_screen.dart';
 import '../../mobile/features/profile/screens/terms_conditions_screen.dart';
 import '../../mobile/features/profile/screens/privacy_policy_screen.dart';
 import '../../mobile/features/offline/screens/offline_state_screen.dart';
+import '../../mobile/features/notifications/screens/notifications_screen.dart';
 
 import '../../mobile/widgets/main_tab_shell.dart';
 
@@ -55,6 +56,12 @@ final appRouter = GoRouter(
 
     // ── Main tab shell (Home / Reservations / Profile) ───────────
     GoRoute(path: '/home', builder: (context, state) => const MainTabShell()),
+
+    // ── Notifications ────────────────────────────────────────────
+    GoRoute(
+      path: '/notifications',
+      builder: (context, state) => const NotificationsScreen(),
+    ),
 
     // ── Detail / flow screens (pushed on top of tabs) ────────────
     GoRoute(

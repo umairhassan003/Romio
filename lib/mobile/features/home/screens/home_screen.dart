@@ -12,6 +12,7 @@ import '../../auth/providers/auth_provider.dart';
 import '../../../features/my_reservations/providers/my_reservations_provider.dart';
 import '../../reservation/providers/reservation_flow_provider.dart';
 import '../../payment/providers/card_wallet_provider.dart';
+import '../../notifications/providers/notifications_provider.dart';
 import 'dart:async';
 import '../../../../core/services/places_service.dart';
 import '../../../widgets/app_calendar.dart';
@@ -47,18 +48,21 @@ class _HomeScreenState extends State<HomeScreen> {
         });
       }
     });
-    WidgetsBinding.instance.addPostFrameCallback((_) {
+    WidgetsBinding.instance.addPostFrameCallback((_) async {
       final user = context.read<AuthProvider>().user;
-      if (user != null) {
-        // Load this account's cards saved locally on this device.
-        context.read<CardWalletProvider>().loadForUser(user.id);
-        context.read<ProfileProvider>().loadProfile(user.id);
-        final profile = context.read<ProfileProvider>().profile;
-        if (profile != null) {
-          context.read<MyReservationsProvider>().loadUserReservations(
-            profile.id,
-          );
-        }
+      if (user == null) return;
+      // Load this account's cards saved locally on this device.
+      context.read<CardWalletProvider>().loadForUser(user.id);
+      // Wait for the profile before loading data keyed by the profile id;
+      // reading it synchronously right after kicking off the async load
+      // would see null on a cold start.
+      final profileProvider = context.read<ProfileProvider>();
+      await profileProvider.loadProfile(user.id);
+      if (!mounted) return;
+      final profile = profileProvider.profile;
+      if (profile != null) {
+        context.read<MyReservationsProvider>().loadUserReservations(profile.id);
+        context.read<NotificationsProvider>().loadForUser(profile.id);
       }
     });
   }
@@ -224,10 +228,10 @@ class _HomeScreenState extends State<HomeScreen> {
     final l10n = AppLocalizations.of(context);
     final homeProvider = context.watch<HomeProvider>();
     final profileProvider = context.watch<ProfileProvider>();
-    final reservationsProvider = context.watch<MyReservationsProvider>();
     final reservationProvider = context.watch<ReservationFlowProvider>();
+    final notificationsProvider = context.watch<NotificationsProvider>();
     final userName = profileProvider.displayName;
-    final hasUpcoming = reservationsProvider.upcomingReservations.isNotEmpty;
+    final unreadCount = notificationsProvider.unreadCount;
     // Hotels to show — reordered by proximity when a place is searched.
     final displayed = homeProvider.displayedHotels;
 
@@ -282,8 +286,9 @@ class _HomeScreenState extends State<HomeScreen> {
                                   ),
                                 ),
                                 GestureDetector(
-                                  onTap: () {},
+                                  onTap: () => context.push('/notifications'),
                                   child: Stack(
+                                    clipBehavior: Clip.none,
                                     children: [
                                       Container(
                                         width: 44,
@@ -301,16 +306,39 @@ class _HomeScreenState extends State<HomeScreen> {
                                           size: 22,
                                         ),
                                       ),
-                                      if (hasUpcoming)
+                                      if (unreadCount > 0)
                                         Positioned(
-                                          top: 8,
-                                          right: 8,
+                                          top: -2,
+                                          right: -2,
                                           child: Container(
-                                            width: 8,
-                                            height: 8,
-                                            decoration: const BoxDecoration(
+                                            constraints: const BoxConstraints(
+                                              minWidth: 18,
+                                              minHeight: 18,
+                                            ),
+                                            padding: const EdgeInsets.symmetric(
+                                              horizontal: 4,
+                                            ),
+                                            decoration: BoxDecoration(
                                               color: AppColors.error,
-                                              shape: BoxShape.circle,
+                                              shape: BoxShape.rectangle,
+                                              borderRadius:
+                                                  BorderRadius.circular(9),
+                                              border: Border.all(
+                                                color: AppColors.backgroundWhite,
+                                                width: 1.5,
+                                              ),
+                                            ),
+                                            alignment: Alignment.center,
+                                            child: Text(
+                                              unreadCount > 9
+                                                  ? '9+'
+                                                  : '$unreadCount',
+                                              style: AppTextStyles.caption
+                                                  .copyWith(
+                                                    color: Colors.white,
+                                                    fontWeight: FontWeight.w700,
+                                                    height: 1,
+                                                  ),
                                             ),
                                           ),
                                         ),

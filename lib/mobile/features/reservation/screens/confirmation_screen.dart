@@ -1,13 +1,82 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
+import 'package:intl/intl.dart';
 import '../../../../core/theme/app_colors.dart';
 import '../../../../core/theme/app_text_styles.dart';
 import 'package:go_router/go_router.dart';
 import 'package:flutter_gen/gen_l10n/app_localizations.dart';
+import '../../../../data/services/notification_service.dart';
+import '../../profile/providers/profile_provider.dart';
+import '../../notifications/providers/notifications_provider.dart';
 import '../providers/reservation_flow_provider.dart';
 
-class ConfirmationScreen extends StatelessWidget {
+class ConfirmationScreen extends StatefulWidget {
   const ConfirmationScreen({super.key});
+
+  @override
+  State<ConfirmationScreen> createState() => _ConfirmationScreenState();
+}
+
+class _ConfirmationScreenState extends State<ConfirmationScreen> {
+  @override
+  void initState() {
+    super.initState();
+    // Raise the booking-confirmed notification once, right after this screen
+    // is reached from any of the booking flows (pay online / pay at property).
+    WidgetsBinding.instance.addPostFrameCallback((_) => _raiseNotification());
+  }
+
+  /// Adds the confirmed-booking entry to the in-app notification center and
+  /// pops a device notification, both in the app's selected language. Fully
+  /// best-effort: any failure here must not disturb the confirmation screen.
+  void _raiseNotification() {
+    if (!mounted) return;
+    final provider = context.read<ReservationFlowProvider>();
+    final reservation = provider.confirmedReservation;
+    final profile = context.read<ProfileProvider>().profile;
+    if (reservation == null || profile == null) return;
+
+    final l10n = AppLocalizations.of(context);
+    final localeCode = Localizations.localeOf(context).languageCode;
+
+    final code = reservation.reservationCode;
+    final hotel = (provider.hotelName?.isNotEmpty == true
+            ? provider.hotelName
+            : reservation.hotelName) ??
+        provider.roomName ??
+        reservation.roomName ??
+        '';
+    final room = provider.roomName ?? reservation.roomName ?? '';
+    final checkIn = reservation.checkInTime;
+    final dateStr =
+        DateFormat.yMMMMd(localeCode).format(reservation.reservationDate);
+
+    // In-app notification (persisted, re-localized when read).
+    context.read<NotificationsProvider>().addBookingConfirmed(
+          userId: profile.id,
+          code: code,
+          hotelName: hotel,
+          roomName: room,
+          reservationDateIso: reservation.reservationDate.toIso8601String(),
+          checkInTime: checkIn,
+        );
+
+    // Device notification in the current language.
+    final title =
+        l10n?.notificationBookingConfirmedTitle ?? 'Booking confirmed';
+    final body = l10n?.notificationBookingConfirmedBody(
+          code,
+          hotel,
+          dateStr,
+          checkIn,
+        ) ??
+        'Your reservation $code at $hotel is confirmed for $dateStr at $checkIn.';
+    NotificationService.instance.show(
+      id: code.hashCode & 0x7fffffff,
+      title: title,
+      body: body,
+    );
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -212,15 +281,22 @@ class ConfirmationScreen extends StatelessWidget {
 
   Widget _row(String label, String value, {bool isId = false}) => Row(
     mainAxisAlignment: MainAxisAlignment.spaceBetween,
+    crossAxisAlignment: CrossAxisAlignment.start,
     children: [
-      Text(
-        label,
-        style: AppTextStyles.bodyM.copyWith(color: AppColors.textSecondary),
+      Flexible(
+        child: Text(
+          label,
+          style: AppTextStyles.bodyM.copyWith(color: AppColors.textSecondary),
+        ),
       ),
-      Text(
-        value,
-        style: AppTextStyles.labelM.copyWith(
-          color: isId ? AppColors.textSecondary : AppColors.textPrimary,
+      const SizedBox(width: 12),
+      Flexible(
+        child: Text(
+          value,
+          textAlign: TextAlign.right,
+          style: AppTextStyles.labelM.copyWith(
+            color: isId ? AppColors.textSecondary : AppColors.textPrimary,
+          ),
         ),
       ),
     ],

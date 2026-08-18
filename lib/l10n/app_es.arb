@@ -658,7 +658,14 @@
     "dataStorageIntro2": "Este servicio se ha diseñado para ofrecer un nivel de seguridad muy elevado.",
     "dataStorageBullet1": "Sus datos bancarios y sus transacciones están protegidos.",
     "dataStorageBullet2": "Nuestro servicio de pago en línea garantiza que sus datos permanezcan seguros y se traten con total confidencialidad.",
-    "dataStorageBullet3": "Se le solicitará que introduzca el código de seguridad (los tres dígitos situados en la parte posterior de su tarjeta de crédito) durante cada transacción, con el fin de comprobar la validez de la tarjeta y evitar su uso fraudulento. Esta información nunca se almacena."
+    "dataStorageBullet3": "Se le solicitará que introduzca el código de seguridad (los tres dígitos situados en la parte posterior de su tarjeta de crédito) durante cada transacción, con el fin de comprobar la validez de la tarjeta y evitar su uso fraudulento. Esta información nunca se almacena.",
+    "notificationsTitle": "Notificaciones",
+    "notificationsEmptyTitle": "Aún no hay notificaciones",
+    "notificationsEmptyBody": "Tus confirmaciones de reserva y novedades aparecerán aquí.",
+    "notificationsMarkAllRead": "Marcar todas como leídas",
+    "notificationBookingConfirmedTitle": "Reserva confirmada",
+    "notificationBookingConfirmedBody": "Tu reserva {code} en {hotel} está confirmada para el {date} a las {time}.",
+    "@notificationBookingConfirmedBody": { "placeholders": { "code": { "type": "String" }, "hotel": { "type": "String" }, "date": { "type": "String" }, "time": { "type": "String" } } }
 }
 
 
