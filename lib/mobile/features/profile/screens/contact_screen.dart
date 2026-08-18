@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_gen/gen_l10n/app_localizations.dart';
 import 'package:go_router/go_router.dart';
+import 'package:url_launcher/url_launcher.dart';
 import '../../../../core/theme/app_colors.dart';
 import '../../../../core/theme/app_text_styles.dart';
 
@@ -124,11 +125,20 @@ class ContactScreen extends StatelessWidget {
               Row(
                 mainAxisAlignment: MainAxisAlignment.center,
                 children: [
-                  _buildSocialBadge(Icons.facebook),
+                  _buildSocialBadge(
+                    Icons.facebook,
+                    'https://www.facebook.com/profile.php?id=61583992976271',
+                  ),
                   const SizedBox(width: 20),
-                  _buildSocialBadge(Icons.camera_alt_outlined),
+                  _buildSocialBadge(
+                    Icons.camera_alt_outlined,
+                    'https://www.instagram.com/romio.app/',
+                  ),
                   const SizedBox(width: 20),
-                  _buildSocialBadge(Icons.language),
+                  _buildSocialBadge(
+                    Icons.language,
+                    'https://getromio.app',
+                  ),
                 ],
               ),
             ],
@@ -187,19 +197,29 @@ class ContactScreen extends StatelessWidget {
     );
   }
 
-  Widget _buildSocialBadge(IconData icon) {
-    return Container(
-      width: 44,
-      height: 44,
-      decoration: const BoxDecoration(
-        color: AppColors.primaryBurgundy,
-        shape: BoxShape.circle,
-      ),
-      child: Icon(
-        icon,
-        color: Colors.white,
-        size: 24,
+  Widget _buildSocialBadge(IconData icon, String url) {
+    return GestureDetector(
+      onTap: () => _launchUrl(url),
+      child: Container(
+        width: 44,
+        height: 44,
+        decoration: const BoxDecoration(
+          color: AppColors.primaryBurgundy,
+          shape: BoxShape.circle,
+        ),
+        child: Icon(
+          icon,
+          color: Colors.white,
+          size: 24,
+        ),
       ),
     );
+  }
+
+  Future<void> _launchUrl(String url) async {
+    final uri = Uri.parse(url);
+    if (!await launchUrl(uri, mode: LaunchMode.externalApplication)) {
+      debugPrint('Could not launch $url');
+    }
   }
 }

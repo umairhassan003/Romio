@@ -67,6 +67,9 @@ dependencies:
   video_player: ^2.9.2
   http: ^1.6.0
 
+  # Launch external URLs (social links, email, whatsapp)
+  url_launcher: ^6.3.0
+
   # PayPal-wallet approval (in-app browser for buyer approval round-trip)
   webview_flutter: ^4.7.0
   flutter_map: ^8.3.1
